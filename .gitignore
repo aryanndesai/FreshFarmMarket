@@ -1,0 +1,20 @@
+# Build results
+bin/
+obj/
+.vs/
+*.user
+
+# Database
+*.db
+*.db-shm
+*.db-wal
+
+# Sensitive files - NEVER COMMIT THESE!
+appsettings.json
+appsettings.Development.json
+
+# User uploads
+wwwroot/uploads/
+
+# Data protection keys
+keys/
