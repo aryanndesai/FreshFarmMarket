@@ -1,0 +1,191 @@
+﻿@model FreshFarmMarket.Models.User
+@{
+    ViewData["Title"] = "Home - Fresh Farm Market";
+}
+
+<div class="container mt-5">
+    <!-- Welcome Banner -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-success shadow-sm border-0" role="alert">
+                <div class="d-flex align-items-center">
+                    <i class="bi bi-check-circle-fill" style="font-size: 2rem; margin-right: 15px;"></i>
+                    <div>
+                        <h4 class="alert-heading mb-1">Welcome back, @Model.FullName! 🎉</h4>
+                        <p class="mb-0">You're successfully logged in to Fresh Farm Market</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Profile Card -->
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card shadow-lg h-100">
+                <div class="card-header bg-success text-white text-center">
+                    <h5 class="mb-0"><i class="bi bi-person-circle"></i> Your Profile</h5>
+                </div>
+                <div class="card-body text-center">
+                    @if (!string.IsNullOrEmpty(Model.PhotoPath))
+                    {
+                        <img src="@Model.PhotoPath" alt="Profile Photo" class="img-thumbnail rounded-circle mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                    }
+                    else
+                    {
+                        <div class="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center mb-3 mx-auto" 
+                             style="width: 150px; height: 150px; font-size: 3rem;">
+                            @Model.FullName.Substring(0, 1)
+                        </div>
+                    }
+                    <h4 class="mb-2">@Model.FullName</h4>
+                    <p class="text-muted mb-3">
+                        <i class="bi bi-envelope-fill"></i> @Model.Email
+                    </p>
+                    <p class="small text-muted">
+                        <i class="bi bi-calendar-check"></i> Member since: @Model.CreatedAt.ToString("MMMM dd, yyyy")
+                    </p>
+                    @if (Model.LastLogin.HasValue)
+                    {
+                        <p class="small text-muted">
+                            <i class="bi bi-clock-history"></i> Last login: @Model.LastLogin.Value.ToString("MMM dd, yyyy hh:mm tt")
+                        </p>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            <!-- Personal Information -->
+            <div class="card shadow-lg mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-info-circle-fill"></i> Personal Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-person-badge"></i> Full Name:</strong>
+                            <p class="mb-0">@Model.FullName</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-gender-ambiguous"></i> Gender:</strong>
+                            <p class="mb-0">@Model.Gender</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-telephone-fill"></i> Mobile Number:</strong>
+                            <p class="mb-0">@Model.MobileNo</p>
+                        </div>
+                        <div class="col-md-6">
+                            <strong><i class="bi bi-envelope-at-fill"></i> Email:</strong>
+                            <p class="mb-0">@Model.Email</p>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <strong><i class="bi bi-geo-alt-fill"></i> Delivery Address:</strong>
+                            <p class="mb-0">@Model.DeliveryAddress</p>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.AboutMe))
+                    {
+                        <div class="row">
+                            <div class="col-12">
+                                <strong><i class="bi bi-chat-left-text-fill"></i> About Me:</strong>
+                                <p class="mb-0">@Model.AboutMe</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Payment Information (Encrypted) -->
+            <div class="card shadow-lg mb-4">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="bi bi-credit-card-fill"></i> Payment Information (Encrypted)</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-shield-lock-fill"></i> <strong>Secure Data:</strong> Your credit card is encrypted with AES-256 encryption
+                    </div>
+                    <div class="mt-3">
+                        <strong>Credit Card Number:</strong>
+                        <p class="mb-0 font-monospace">
+                            @if (!string.IsNullOrEmpty(Model.CreditCardNo))
+                            {
+                                @($"**** **** **** {Model.CreditCardNo.Substring(Math.Max(0, Model.CreditCardNo.Length - 4))}")
+                            }
+                            else
+                            {
+                                <span class="text-muted">Not available</span>
+                            }
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Security Features -->
+            <div class="card shadow-lg">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="bi bi-shield-check"></i> Security Features Active</h5>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success"></i> 
+                            <strong>Two-Factor Authentication:</strong> @(Model.TwoFactorEnabled ? "Enabled" : "Disabled")
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success"></i> 
+                            <strong>Account Lockout Protection:</strong> Active (3 failed attempts)
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success"></i> 
+                            <strong>Password Encryption:</strong> PBKDF2 (600,000 iterations)
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle-fill text-success"></i> 
+                            <strong>Session Timeout:</strong> 10 minutes of inactivity
+                        </li>
+                        <li class="mb-0">
+                            <i class="bi bi-check-circle-fill text-success"></i> 
+                            <strong>Data Encryption:</strong> AES-256 for sensitive data
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-lg">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="bi bi-gear-fill"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a asp-controller="Account" asp-action="ChangePassword" class="btn btn-warning">
+                            <i class="bi bi-key-fill"></i> Change Password
+                        </a>
+                        <a asp-controller="Account" asp-action="Logout" class="btn btn-danger">
+                            <i class="bi bi-box-arrow-right"></i> Logout
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: none;
+        border-radius: 10px;
+    }
+    .card-header {
+        border-radius: 10px 10px 0 0 !important;
+    }
+</style>
