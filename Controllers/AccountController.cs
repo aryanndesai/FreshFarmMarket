@@ -1,15 +1,15 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Threading.Tasks;
 using System.Text.Json;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 using FreshFarmMarket.Data;
 using FreshFarmMarket.Models;
-using FreshFarmMarket.ViewModels;
 using FreshFarmMarket.Services;
+using FreshFarmMarket.ViewModels;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FreshFarmMarket.Controllers
 {
@@ -26,7 +26,7 @@ namespace FreshFarmMarket.Controllers
         private const int MAX_FAILED_ATTEMPTS = 3;
         private const int LOCKOUT_DURATION_MINUTES = 5;
         private const int AUTO_UNLOCK_MINUTES = 10;
-        
+
         // Password policy settings
         private const int MIN_PASSWORD_AGE_MINUTES = 1; // Minimum time before can change password again
         private const int MAX_PASSWORD_AGE_DAYS = 90; // Force password change after 90 days
@@ -38,7 +38,8 @@ namespace FreshFarmMarket.Controllers
             AuditService auditService,
             PasswordService passwordService,
             EmailService emailService,
-            IConfiguration configuration)
+            IConfiguration configuration
+        )
         {
             _context = context;
             _encryptionService = encryptionService;
@@ -71,7 +72,12 @@ namespace FreshFarmMarket.Controllers
             if (!isRecaptchaValid)
             {
                 ModelState.AddModelError("", "Bot detection failed. Please try again.");
-                await _auditService.LogAsync("Registration Failed", null, "reCAPTCHA verification failed", false);
+                await _auditService.LogAsync(
+                    "Registration Failed",
+                    null,
+                    "reCAPTCHA verification failed",
+                    false
+                );
                 return View(model);
             }
 
@@ -81,13 +87,19 @@ namespace FreshFarmMarket.Controllers
             }
 
             // Check for duplicate email
-            var existingUser = await _context.Users
-                .FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower());
+            var existingUser = await _context.Users.FirstOrDefaultAsync(u =>
+                u.Email.ToLower() == model.Email.ToLower()
+            );
 
             if (existingUser != null)
             {
                 ModelState.AddModelError("Email", "This email address is already registered");
-                await _auditService.LogAsync("Registration Failed", null, $"Duplicate email: {model.Email}", false);
+                await _auditService.LogAsync(
+                    "Registration Failed",
+                    null,
+                    $"Duplicate email: {model.Email}",
+                    false
+                );
                 return View(model);
             }
 
@@ -150,7 +162,7 @@ namespace FreshFarmMarket.Controllers
                 FailedLoginAttempts = 0,
                 IsLocked = false,
                 RequirePasswordChange = false,
-                TwoFactorEnabled = true // Enable 2FA by default
+                TwoFactorEnabled = true, // Enable 2FA by default
             };
 
             _context.Users.Add(user);
@@ -161,13 +173,18 @@ namespace FreshFarmMarket.Controllers
             {
                 UserId = user.UserId,
                 PasswordHash = passwordHash,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
             };
             _context.PasswordHistories.Add(passwordHistory);
             await _context.SaveChangesAsync();
 
             // Log registration
-            await _auditService.LogAsync("User Registration", user.UserId, $"New user registered: {user.Email}", true);
+            await _auditService.LogAsync(
+                "User Registration",
+                user.UserId,
+                $"New user registered: {user.Email}",
+                true
+            );
 
             // Send welcome email
             await _emailService.SendWelcomeEmailAsync(user.Email, user.FullName);
@@ -199,7 +216,12 @@ namespace FreshFarmMarket.Controllers
             if (!isRecaptchaValid)
             {
                 ModelState.AddModelError("", "Bot detection failed. Please try again.");
-                await _auditService.LogAsync("Login Failed", null, "reCAPTCHA verification failed", false);
+                await _auditService.LogAsync(
+                    "Login Failed",
+                    null,
+                    "reCAPTCHA verification failed",
+                    false
+                );
                 return View(model);
             }
 
@@ -208,13 +230,19 @@ namespace FreshFarmMarket.Controllers
                 return View(model);
             }
 
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower());
+            var user = await _context.Users.FirstOrDefaultAsync(u =>
+                u.Email.ToLower() == model.Email.ToLower()
+            );
 
             if (user == null)
             {
                 ModelState.AddModelError("", "Invalid email or password");
-                await _auditService.LogAsync("Login Failed", null, $"User not found: {model.Email}", false);
+                await _auditService.LogAsync(
+                    "Login Failed",
+                    null,
+                    $"User not found: {model.Email}",
+                    false
+                );
                 return View(model);
             }
 
@@ -229,13 +257,26 @@ namespace FreshFarmMarket.Controllers
                     user.FailedLoginAttempts = 0;
                     user.LockedUntil = null;
                     await _context.SaveChangesAsync();
-                    await _auditService.LogAsync("Account Auto-Unlocked", user.UserId, $"Account automatically unlocked: {user.Email}", true);
+                    await _auditService.LogAsync(
+                        "Account Auto-Unlocked",
+                        user.UserId,
+                        $"Account automatically unlocked: {user.Email}",
+                        true
+                    );
                 }
                 else
                 {
                     var remainingTime = user.LockedUntil!.Value - DateTime.UtcNow;
-                    ModelState.AddModelError("", $"Account is locked. Try again in {Math.Ceiling(remainingTime.TotalMinutes)} minutes.");
-                    await _auditService.LogAsync("Login Failed", user.UserId, $"Attempted login on locked account: {user.Email}", false);
+                    ModelState.AddModelError(
+                        "",
+                        $"Account is locked. Try again in {Math.Ceiling(remainingTime.TotalMinutes)} minutes."
+                    );
+                    await _auditService.LogAsync(
+                        "Login Failed",
+                        user.UserId,
+                        $"Attempted login on locked account: {user.Email}",
+                        false
+                    );
                     return View(model);
                 }
             }
@@ -253,15 +294,31 @@ namespace FreshFarmMarket.Controllers
                     user.LockedUntil = DateTime.UtcNow.AddMinutes(AUTO_UNLOCK_MINUTES);
                     await _context.SaveChangesAsync();
 
-                    ModelState.AddModelError("", $"Account locked due to {MAX_FAILED_ATTEMPTS} failed login attempts. Try again in {AUTO_UNLOCK_MINUTES} minutes.");
-                    await _auditService.LogAsync("Account Locked", user.UserId, $"Account locked after {MAX_FAILED_ATTEMPTS} failed attempts: {user.Email}", false);
+                    ModelState.AddModelError(
+                        "",
+                        $"Account locked due to {MAX_FAILED_ATTEMPTS} failed login attempts. Try again in {AUTO_UNLOCK_MINUTES} minutes."
+                    );
+                    await _auditService.LogAsync(
+                        "Account Locked",
+                        user.UserId,
+                        $"Account locked after {MAX_FAILED_ATTEMPTS} failed attempts: {user.Email}",
+                        false
+                    );
                 }
                 else
                 {
                     await _context.SaveChangesAsync();
                     var attemptsLeft = MAX_FAILED_ATTEMPTS - user.FailedLoginAttempts;
-                    ModelState.AddModelError("", $"Invalid email or password. {attemptsLeft} attempt(s) remaining.");
-                    await _auditService.LogAsync("Login Failed", user.UserId, $"Invalid password: {user.Email}", false);
+                    ModelState.AddModelError(
+                        "",
+                        $"Invalid email or password. {attemptsLeft} attempt(s) remaining."
+                    );
+                    await _auditService.LogAsync(
+                        "Login Failed",
+                        user.UserId,
+                        $"Invalid password: {user.Email}",
+                        false
+                    );
                 }
 
                 return View(model);
@@ -277,7 +334,8 @@ namespace FreshFarmMarket.Controllers
             {
                 user.RequirePasswordChange = true;
                 await _context.SaveChangesAsync();
-                TempData["WarningMessage"] = $"Your password is {(int)daysSincePasswordChange} days old. Please change it.";
+                TempData["WarningMessage"] =
+                    $"Your password is {(int)daysSincePasswordChange} days old. Please change it.";
                 HttpContext.Session.SetInt32("TempUserId", user.UserId);
                 return RedirectToAction("ChangePassword");
             }
@@ -295,7 +353,7 @@ namespace FreshFarmMarket.Controllers
                     Code = twoFactorCode,
                     ExpiryDate = codeExpiry,
                     IsUsed = false,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
                 };
 
                 _context.TwoFactorCodes.Add(tfaCode);
@@ -307,7 +365,12 @@ namespace FreshFarmMarket.Controllers
                 // Store email in TempData for 2FA verification
                 TempData["TwoFactorEmail"] = user.Email;
 
-                await _auditService.LogAsync("2FA Code Sent", user.UserId, $"Two-factor code sent to: {user.Email}", true);
+                await _auditService.LogAsync(
+                    "2FA Code Sent",
+                    user.UserId,
+                    $"Two-factor code sent to: {user.Email}",
+                    true
+                );
 
                 return RedirectToAction("VerifyTwoFactor");
             }
@@ -325,13 +388,35 @@ namespace FreshFarmMarket.Controllers
             user.LastLogin = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
-            // Create session
+            // Generate unique AuthToken to prevent session fixation
+            string authToken = Guid.NewGuid().ToString();
+
+            // Store AuthToken in secure cookie
+            Response.Cookies.Append(
+                "AuthToken",
+                authToken,
+                new CookieOptions
+                {
+                    HttpOnly = true, // Prevents JavaScript access
+                    Secure = true, // Requires HTTPS
+                    SameSite = SameSiteMode.Strict, // CSRF protection
+                    Expires = DateTime.Now.AddHours(8), // 8-hour expiration
+                }
+            );
+
+            // Create session with AuthToken
             HttpContext.Session.SetInt32("UserId", user.UserId);
             HttpContext.Session.SetString("UserEmail", user.Email);
             HttpContext.Session.SetString("UserName", user.FullName);
+            HttpContext.Session.SetString("AuthToken", authToken); // Store in session too
 
             // Log successful login
-            await _auditService.LogAsync("Login Successful", user.UserId, $"User logged in: {user.Email}", true);
+            await _auditService.LogAsync(
+                "Login Successful",
+                user.UserId,
+                $"User logged in: {user.Email}",
+                true
+            );
         }
 
         // GET: Account/VerifyTwoFactor
@@ -347,11 +432,7 @@ namespace FreshFarmMarket.Controllers
             // Keep email for POST request
             TempData.Keep("TwoFactorEmail");
 
-            return View(new VerifyTwoFactorViewModel 
-            { 
-                Email = email,
-                Code = string.Empty 
-            });
+            return View(new VerifyTwoFactorViewModel { Email = email, Code = string.Empty });
         }
 
         // POST: Account/VerifyTwoFactor
@@ -364,8 +445,9 @@ namespace FreshFarmMarket.Controllers
                 return View(model);
             }
 
-            var user = await _context.Users
-                .FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower());
+            var user = await _context.Users.FirstOrDefaultAsync(u =>
+                u.Email.ToLower() == model.Email.ToLower()
+            );
 
             if (user == null)
             {
@@ -374,18 +456,25 @@ namespace FreshFarmMarket.Controllers
             }
 
             // Find valid code for this user
-            var validCode = await _context.TwoFactorCodes
-                .Where(t => t.UserId == user.UserId && 
-                           t.Code == model.Code && 
-                           !t.IsUsed && 
-                           t.ExpiryDate > DateTime.UtcNow)
+            var validCode = await _context
+                .TwoFactorCodes.Where(t =>
+                    t.UserId == user.UserId
+                    && t.Code == model.Code
+                    && !t.IsUsed
+                    && t.ExpiryDate > DateTime.UtcNow
+                )
                 .OrderByDescending(t => t.CreatedAt)
                 .FirstOrDefaultAsync();
 
             if (validCode == null)
             {
                 ModelState.AddModelError("", "Invalid or expired verification code");
-                await _auditService.LogAsync("2FA Failed", user.UserId, $"Invalid 2FA code entered: {user.Email}", false);
+                await _auditService.LogAsync(
+                    "2FA Failed",
+                    user.UserId,
+                    $"Invalid 2FA code entered: {user.Email}",
+                    false
+                );
                 return View(model);
             }
 
@@ -396,7 +485,12 @@ namespace FreshFarmMarket.Controllers
             // Complete login
             await CompleteLogin(user);
 
-            await _auditService.LogAsync("2FA Verified", user.UserId, $"Two-factor authentication successful: {user.Email}", true);
+            await _auditService.LogAsync(
+                "2FA Verified",
+                user.UserId,
+                $"Two-factor authentication successful: {user.Email}",
+                true
+            );
 
             TempData["SuccessMessage"] = "Login successful!";
             return RedirectToAction("Index", "Home");
@@ -412,7 +506,9 @@ namespace FreshFarmMarket.Controllers
                 return RedirectToAction("Login");
             }
 
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+            var user = await _context.Users.FirstOrDefaultAsync(u =>
+                u.Email.ToLower() == email.ToLower()
+            );
             if (user == null)
             {
                 return RedirectToAction("Login");
@@ -428,7 +524,7 @@ namespace FreshFarmMarket.Controllers
                 Code = twoFactorCode,
                 ExpiryDate = codeExpiry,
                 IsUsed = false,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
             };
 
             _context.TwoFactorCodes.Add(tfaCode);
@@ -446,7 +542,9 @@ namespace FreshFarmMarket.Controllers
         [HttpGet]
         public async Task<IActionResult> ChangePassword()
         {
-            var userId = HttpContext.Session.GetInt32("UserId") ?? HttpContext.Session.GetInt32("TempUserId");
+            var userId =
+                HttpContext.Session.GetInt32("UserId")
+                ?? HttpContext.Session.GetInt32("TempUserId");
             if (userId == null)
             {
                 return RedirectToAction("Login");
@@ -471,7 +569,9 @@ namespace FreshFarmMarket.Controllers
                 return View(model);
             }
 
-            var userId = HttpContext.Session.GetInt32("UserId") ?? HttpContext.Session.GetInt32("TempUserId");
+            var userId =
+                HttpContext.Session.GetInt32("UserId")
+                ?? HttpContext.Session.GetInt32("TempUserId");
             if (userId == null)
             {
                 return RedirectToAction("Login");
@@ -487,7 +587,12 @@ namespace FreshFarmMarket.Controllers
             if (!_passwordService.VerifyPassword(model.CurrentPassword, user.PasswordHash))
             {
                 ModelState.AddModelError("CurrentPassword", "Current password is incorrect");
-                await _auditService.LogAsync("Password Change Failed", user.UserId, "Incorrect current password", false);
+                await _auditService.LogAsync(
+                    "Password Change Failed",
+                    user.UserId,
+                    "Incorrect current password",
+                    false
+                );
                 return View(model);
             }
 
@@ -495,13 +600,16 @@ namespace FreshFarmMarket.Controllers
             var minutesSinceLastChange = (DateTime.UtcNow - user.PasswordLastChanged).TotalMinutes;
             if (minutesSinceLastChange < MIN_PASSWORD_AGE_MINUTES && !user.RequirePasswordChange)
             {
-                ModelState.AddModelError("", $"You can only change your password once every {MIN_PASSWORD_AGE_MINUTES} minute(s)");
+                ModelState.AddModelError(
+                    "",
+                    $"You can only change your password once every {MIN_PASSWORD_AGE_MINUTES} minute(s)"
+                );
                 return View(model);
             }
 
             // Check password history (prevent reuse)
-            var passwordHistories = await _context.PasswordHistories
-                .Where(p => p.UserId == user.UserId)
+            var passwordHistories = await _context
+                .PasswordHistories.Where(p => p.UserId == user.UserId)
                 .OrderByDescending(p => p.CreatedAt)
                 .Take(PASSWORD_HISTORY_COUNT)
                 .ToListAsync();
@@ -510,8 +618,16 @@ namespace FreshFarmMarket.Controllers
             {
                 if (_passwordService.VerifyPassword(model.NewPassword, history.PasswordHash))
                 {
-                    ModelState.AddModelError("NewPassword", $"You cannot reuse your last {PASSWORD_HISTORY_COUNT} passwords");
-                    await _auditService.LogAsync("Password Change Failed", user.UserId, "Password reuse attempted", false);
+                    ModelState.AddModelError(
+                        "NewPassword",
+                        $"You cannot reuse your last {PASSWORD_HISTORY_COUNT} passwords"
+                    );
+                    await _auditService.LogAsync(
+                        "Password Change Failed",
+                        user.UserId,
+                        "Password reuse attempted",
+                        false
+                    );
                     return View(model);
                 }
             }
@@ -530,19 +646,25 @@ namespace FreshFarmMarket.Controllers
             {
                 UserId = user.UserId,
                 PasswordHash = newPasswordHash,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
             };
             _context.PasswordHistories.Add(newHistory);
             await _context.SaveChangesAsync();
 
-            await _auditService.LogAsync("Password Changed", user.UserId, "Password successfully changed", true);
+            await _auditService.LogAsync(
+                "Password Changed",
+                user.UserId,
+                "Password successfully changed",
+                true
+            );
 
             // If this was a required change, complete login
             if (HttpContext.Session.GetInt32("TempUserId") != null)
             {
                 HttpContext.Session.Remove("TempUserId");
                 await CompleteLogin(user);
-                TempData["SuccessMessage"] = "Password changed successfully! You are now logged in.";
+                TempData["SuccessMessage"] =
+                    "Password changed successfully! You are now logged in.";
                 return RedirectToAction("Index", "Home");
             }
 
@@ -567,10 +689,13 @@ namespace FreshFarmMarket.Controllers
                 return View(model);
             }
 
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower());
+            var user = await _context.Users.FirstOrDefaultAsync(u =>
+                u.Email.ToLower() == model.Email.ToLower()
+            );
 
             // Always show success message (security best practice - don't reveal if email exists)
-            TempData["SuccessMessage"] = "If an account exists with this email, a password reset link has been sent.";
+            TempData["SuccessMessage"] =
+                "If an account exists with this email, a password reset link has been sent.";
 
             if (user != null)
             {
@@ -584,16 +709,19 @@ namespace FreshFarmMarket.Controllers
                     Token = resetToken,
                     ExpiryDate = tokenExpiry,
                     IsUsed = false,
-                    CreatedAt = DateTime.UtcNow
+                    CreatedAt = DateTime.UtcNow,
                 };
 
                 _context.PasswordResetTokens.Add(passwordResetToken);
                 await _context.SaveChangesAsync();
 
                 // Generate reset link
-                var resetLink = Url.Action("ResetPassword", "Account", 
-                    new { token = resetToken, email = user.Email }, 
-                    protocol: Request.Scheme);
+                var resetLink = Url.Action(
+                    "ResetPassword",
+                    "Account",
+                    new { token = resetToken, email = user.Email },
+                    protocol: Request.Scheme
+                );
 
                 // Send reset email
                 if (resetLink != null)
@@ -601,7 +729,12 @@ namespace FreshFarmMarket.Controllers
                     await _emailService.SendPasswordResetEmailAsync(user.Email, resetLink);
                 }
 
-                await _auditService.LogAsync("Password Reset Requested", user.UserId, $"Reset token sent to: {user.Email}", true);
+                await _auditService.LogAsync(
+                    "Password Reset Requested",
+                    user.UserId,
+                    $"Reset token sent to: {user.Email}",
+                    true
+                );
             }
 
             return RedirectToAction("Login");
@@ -617,18 +750,21 @@ namespace FreshFarmMarket.Controllers
                 return RedirectToAction("Login");
             }
 
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
+            var user = await _context.Users.FirstOrDefaultAsync(u =>
+                u.Email.ToLower() == email.ToLower()
+            );
             if (user == null)
             {
                 TempData["ErrorMessage"] = "Invalid password reset link";
                 return RedirectToAction("Login");
             }
 
-            var validToken = await _context.PasswordResetTokens
-                .FirstOrDefaultAsync(t => t.UserId == user.UserId && 
-                                         t.Token == token && 
-                                         !t.IsUsed && 
-                                         t.ExpiryDate > DateTime.UtcNow);
+            var validToken = await _context.PasswordResetTokens.FirstOrDefaultAsync(t =>
+                t.UserId == user.UserId
+                && t.Token == token
+                && !t.IsUsed
+                && t.ExpiryDate > DateTime.UtcNow
+            );
 
             if (validToken == null)
             {
@@ -641,7 +777,7 @@ namespace FreshFarmMarket.Controllers
                 Token = token,
                 Email = email,
                 NewPassword = string.Empty,
-                ConfirmNewPassword = string.Empty
+                ConfirmNewPassword = string.Empty,
             };
 
             return View(model);
@@ -657,18 +793,21 @@ namespace FreshFarmMarket.Controllers
                 return View(model);
             }
 
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == model.Email.ToLower());
+            var user = await _context.Users.FirstOrDefaultAsync(u =>
+                u.Email.ToLower() == model.Email.ToLower()
+            );
             if (user == null)
             {
                 ModelState.AddModelError("", "Invalid reset request");
                 return View(model);
             }
 
-            var validToken = await _context.PasswordResetTokens
-                .FirstOrDefaultAsync(t => t.UserId == user.UserId && 
-                                         t.Token == model.Token && 
-                                         !t.IsUsed && 
-                                         t.ExpiryDate > DateTime.UtcNow);
+            var validToken = await _context.PasswordResetTokens.FirstOrDefaultAsync(t =>
+                t.UserId == user.UserId
+                && t.Token == model.Token
+                && !t.IsUsed
+                && t.ExpiryDate > DateTime.UtcNow
+            );
 
             if (validToken == null)
             {
@@ -677,8 +816,8 @@ namespace FreshFarmMarket.Controllers
             }
 
             // Check password history (prevent reuse)
-            var passwordHistories = await _context.PasswordHistories
-                .Where(p => p.UserId == user.UserId)
+            var passwordHistories = await _context
+                .PasswordHistories.Where(p => p.UserId == user.UserId)
                 .OrderByDescending(p => p.CreatedAt)
                 .Take(PASSWORD_HISTORY_COUNT)
                 .ToListAsync();
@@ -687,7 +826,10 @@ namespace FreshFarmMarket.Controllers
             {
                 if (_passwordService.VerifyPassword(model.NewPassword, history.PasswordHash))
                 {
-                    ModelState.AddModelError("NewPassword", $"You cannot reuse your last {PASSWORD_HISTORY_COUNT} passwords");
+                    ModelState.AddModelError(
+                        "NewPassword",
+                        $"You cannot reuse your last {PASSWORD_HISTORY_COUNT} passwords"
+                    );
                     return View(model);
                 }
             }
@@ -713,14 +855,20 @@ namespace FreshFarmMarket.Controllers
             {
                 UserId = user.UserId,
                 PasswordHash = newPasswordHash,
-                CreatedAt = DateTime.UtcNow
+                CreatedAt = DateTime.UtcNow,
             };
             _context.PasswordHistories.Add(newHistory);
             await _context.SaveChangesAsync();
 
-            await _auditService.LogAsync("Password Reset", user.UserId, "Password successfully reset", true);
+            await _auditService.LogAsync(
+                "Password Reset",
+                user.UserId,
+                "Password successfully reset",
+                true
+            );
 
-            TempData["SuccessMessage"] = "Password reset successful! Please log in with your new password.";
+            TempData["SuccessMessage"] =
+                "Password reset successful! Please log in with your new password.";
             return RedirectToAction("Login");
         }
 
@@ -729,7 +877,7 @@ namespace FreshFarmMarket.Controllers
         public async Task<IActionResult> Logout()
         {
             var userId = HttpContext.Session.GetInt32("UserId");
-            
+
             if (userId.HasValue)
             {
                 await _auditService.LogAsync("Logout", userId.Value, "User logged out", true);
@@ -737,6 +885,9 @@ namespace FreshFarmMarket.Controllers
 
             // Clear all session data
             HttpContext.Session.Clear();
+
+            // Delete AuthToken cookie
+            Response.Cookies.Delete("AuthToken");
 
             TempData["SuccessMessage"] = "You have been logged out successfully";
             return RedirectToAction("Login");
@@ -754,11 +905,13 @@ namespace FreshFarmMarket.Controllers
                 var url = "https://www.google.com/recaptcha/api/siteverify";
 
                 using var client = new HttpClient();
-                var content = new FormUrlEncodedContent(new[]
-                {
-                    new KeyValuePair<string, string>("secret", secretKey),
-                    new KeyValuePair<string, string>("response", token)
-                });
+                var content = new FormUrlEncodedContent(
+                    new[]
+                    {
+                        new KeyValuePair<string, string>("secret", secretKey),
+                        new KeyValuePair<string, string>("response", token),
+                    }
+                );
 
                 var response = await client.PostAsync(url, content);
                 var jsonString = await response.Content.ReadAsStringAsync();

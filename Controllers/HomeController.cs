@@ -1,9 +1,9 @@
 using System.Diagnostics;
+using FreshFarmMarket.Data;
+using FreshFarmMarket.Models;
+using FreshFarmMarket.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using FreshFarmMarket.Models;
-using FreshFarmMarket.Data;
-using FreshFarmMarket.Services;
 
 namespace FreshFarmMarket.Controllers
 {
@@ -27,11 +27,30 @@ namespace FreshFarmMarket.Controllers
                 return RedirectToAction("Login", "Account");
             }
 
+            // Validate AuthToken - detect concurrent logins or session hijacking
+            string cookieToken = Request.Cookies["AuthToken"];
+            string sessionToken = HttpContext.Session.GetString("AuthToken");
+
+            if (
+                string.IsNullOrEmpty(cookieToken)
+                || string.IsNullOrEmpty(sessionToken)
+                || cookieToken != sessionToken
+            )
+            {
+                // AuthToken mismatch - concurrent login or session hijacking detected
+                HttpContext.Session.Clear();
+                Response.Cookies.Delete("AuthToken");
+                TempData["ErrorMessage"] =
+                    "Your session has expired or you logged in from another device. Please log in again.";
+                return RedirectToAction("Login", "Account");
+            }
+
             // Get user data
             var user = await _context.Users.FindAsync(userId.Value);
             if (user == null)
             {
                 HttpContext.Session.Clear();
+                Response.Cookies.Delete("AuthToken");
                 return RedirectToAction("Login", "Account");
             }
 
@@ -40,6 +59,7 @@ namespace FreshFarmMarket.Controllers
             if (string.IsNullOrEmpty(sessionEmail) || sessionEmail != user.Email)
             {
                 HttpContext.Session.Clear();
+                Response.Cookies.Delete("AuthToken");
                 TempData["ErrorMessage"] = "Your session has expired. Please log in again.";
                 return RedirectToAction("Login", "Account");
             }
@@ -58,7 +78,12 @@ namespace FreshFarmMarket.Controllers
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+            return View(
+                new ErrorViewModel
+                {
+                    RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier,
+                }
+            );
         }
     }
 }
