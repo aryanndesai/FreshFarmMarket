@@ -3,13 +3,14 @@ bin/
 obj/
 .vs/
 *.user
+*.suo
 
-# Database
+# Database files
 *.db
 *.db-shm
 *.db-wal
 
-# Sensitive files - NEVER COMMIT THESE!
+# CRITICAL: Never commit these files with secrets!
 appsettings.json
 appsettings.Development.json
 
@@ -18,3 +19,13 @@ wwwroot/uploads/
 
 # Data protection keys
 keys/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
