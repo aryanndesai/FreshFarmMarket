@@ -107,6 +107,9 @@
                             <span asp-validation-for="AboutMe" class="text-danger small"></span>
                         </div>
 
+                        <!-- reCAPTCHA Hidden Field -->
+                        <input type="hidden" id="recaptchaToken" name="RecaptchaToken" />
+
                         <!-- Password Requirements -->
                         <div class="alert alert-info small">
                             <strong>Password Requirements:</strong>
@@ -139,7 +142,24 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
     
+    <!-- reCAPTCHA v3 Script -->
+    <script src="https://www.google.com/recaptcha/api.js?render=6Lf7xVIsAAAAADlZKBz6FFK6O3P_VNDj38q5xVNa"></script>
+    
     <script>
+        // Prevent form submission and execute reCAPTCHA first
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const form = this;
+            
+            grecaptcha.ready(function() {
+                grecaptcha.execute('6Lf7xVIsAAAAADlZKBz6FFK6O3P_VNDj38q5xVNa', {action: 'register'})
+                    .then(function(token) {
+                        document.getElementById('recaptchaToken').value = token;
+                        form.submit();
+                    });
+            });
+        });
+
         // Password Strength Indicator
         document.getElementById('password').addEventListener('input', function() {
             const password = this.value;

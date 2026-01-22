@@ -66,6 +66,9 @@
                             <a asp-action="ForgotPassword" class="text-decoration-none small">Forgot Password?</a>
                         </div>
 
+                        <!-- reCAPTCHA Hidden Field -->
+                        <input type="hidden" id="recaptchaToken" name="RecaptchaToken" />
+
                         <!-- Submit Button -->
                         <div class="d-grid gap-2 mb-3">
                             <button type="submit" class="btn btn-success btn-lg">
@@ -92,4 +95,29 @@
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    
+    <!-- reCAPTCHA v3 Script -->
+    <script src="https://www.google.com/recaptcha/api.js?render=6Lf7xVIsAAAAADlZKBz6FFK6O3P_VNDj38q5xVNa"></script>
+    
+    <script>
+        // Make sure form has an ID
+        const loginForm = document.querySelector('form');
+        if (!loginForm.id) {
+            loginForm.id = 'loginForm';
+        }
+        
+        // Prevent form submission and execute reCAPTCHA first
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const form = this;
+            
+            grecaptcha.ready(function() {
+                grecaptcha.execute('6Lf7xVIsAAAAADlZKBz6FFK6O3P_VNDj38q5xVNa', {action: 'login'})
+                    .then(function(token) {
+                        document.getElementById('recaptchaToken').value = token;
+                        form.submit();
+                    });
+            });
+        });
+    </script>
 }

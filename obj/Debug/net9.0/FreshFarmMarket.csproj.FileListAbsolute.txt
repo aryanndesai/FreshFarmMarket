@@ -439,3 +439,4 @@ C:\NYP\year2\sem2\app_sec\ass2\FreshFarmMarket\obj\Debug\net9.0\refint\FreshFarm
 C:\NYP\year2\sem2\app_sec\ass2\FreshFarmMarket\obj\Debug\net9.0\FreshFarmMarket.pdb
 C:\NYP\year2\sem2\app_sec\ass2\FreshFarmMarket\obj\Debug\net9.0\FreshFarmMarket.genruntimeconfig.cache
 C:\NYP\year2\sem2\app_sec\ass2\FreshFarmMarket\obj\Debug\net9.0\ref\FreshFarmMarket.dll
+C:\NYP\year2\sem2\app_sec\ass2\FreshFarmMarket\obj\Debug\net9.0\FreshFarmMarket.sourcelink.json

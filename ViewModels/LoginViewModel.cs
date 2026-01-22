@@ -12,5 +12,7 @@ namespace FreshFarmMarket.ViewModels
         [Required(ErrorMessage = "Password is required")]
         [DataType(DataType.Password)]
         public required string Password { get; set; }
+
+        public string? RecaptchaToken { get; set; }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using FreshFarmMarket.Data;
@@ -19,6 +20,7 @@ namespace FreshFarmMarket.Controllers
         private readonly AuditService _auditService;
         private readonly PasswordService _passwordService;
         private readonly EmailService _emailService;
+        private readonly IConfiguration _configuration;
 
         // Account lockout settings
         private const int MAX_FAILED_ATTEMPTS = 3;
@@ -35,13 +37,15 @@ namespace FreshFarmMarket.Controllers
             EncryptionService encryptionService,
             AuditService auditService,
             PasswordService passwordService,
-            EmailService emailService)
+            EmailService emailService,
+            IConfiguration configuration)
         {
             _context = context;
             _encryptionService = encryptionService;
             _auditService = auditService;
             _passwordService = passwordService;
             _emailService = emailService;
+            _configuration = configuration;
         }
 
         // GET: Account/Register
@@ -62,6 +66,15 @@ namespace FreshFarmMarket.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
+            // Verify reCAPTCHA
+            var isRecaptchaValid = await VerifyRecaptchaAsync(model.RecaptchaToken);
+            if (!isRecaptchaValid)
+            {
+                ModelState.AddModelError("", "Bot detection failed. Please try again.");
+                await _auditService.LogAsync("Registration Failed", null, "reCAPTCHA verification failed", false);
+                return View(model);
+            }
+
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -181,6 +194,15 @@ namespace FreshFarmMarket.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
+            // Verify reCAPTCHA
+            var isRecaptchaValid = await VerifyRecaptchaAsync(model.RecaptchaToken);
+            if (!isRecaptchaValid)
+            {
+                ModelState.AddModelError("", "Bot detection failed. Please try again.");
+                await _auditService.LogAsync("Login Failed", null, "reCAPTCHA verification failed", false);
+                return View(model);
+            }
+
             if (!ModelState.IsValid)
             {
                 return View(model);
@@ -718,6 +740,37 @@ namespace FreshFarmMarket.Controllers
 
             TempData["SuccessMessage"] = "You have been logged out successfully";
             return RedirectToAction("Login");
+        }
+
+        // reCAPTCHA Verification Method
+        private async Task<bool> VerifyRecaptchaAsync(string token)
+        {
+            if (string.IsNullOrEmpty(token))
+                return false;
+
+            try
+            {
+                var secretKey = _configuration["GoogleReCaptcha:SecretKey"];
+                var url = "https://www.google.com/recaptcha/api/siteverify";
+
+                using var client = new HttpClient();
+                var content = new FormUrlEncodedContent(new[]
+                {
+                    new KeyValuePair<string, string>("secret", secretKey),
+                    new KeyValuePair<string, string>("response", token)
+                });
+
+                var response = await client.PostAsync(url, content);
+                var jsonString = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<RecaptchaResponse>(jsonString);
+
+                // Score threshold: 0.5 (0.0 = bot, 1.0 = human)
+                return result?.success == true && result?.score >= 0.5;
+            }
+            catch
+            {
+                return false;
+            }
         }
     }
 }

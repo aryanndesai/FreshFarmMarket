@@ -55,5 +55,7 @@ namespace FreshFarmMarket.ViewModels
         [Display(Name = "About Me")]
         [StringLength(1000, ErrorMessage = "About Me cannot exceed 1000 characters")]
         public required string AboutMe { get; set; }
+
+        public string? RecaptchaToken { get; set; }
     }
 }
