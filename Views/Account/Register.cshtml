@@ -3,136 +3,420 @@
     ViewData["Title"] = "Register - Fresh Farm Market";
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow-lg">
-                <div class="card-header bg-success text-white">
-                    <h3 class="mb-0"><i class="bi bi-person-plus-fill"></i> Create Your Account</h3>
-                    <p class="mb-0 small">Join Fresh Farm Market today!</p>
-                </div>
-                <div class="card-body p-4">
-                    <form asp-action="Register" method="post" enctype="multipart/form-data" id="registerForm">
-                        @Html.AntiForgeryToken()
-                        
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+<style>
+    .register-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        padding: 40px 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
 
-                        <div class="row">
-                            <!-- Full Name -->
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="FullName" class="form-label fw-bold"></label>
-                                <input asp-for="FullName" class="form-control" placeholder="Enter your full name" />
-                                <span asp-validation-for="FullName" class="text-danger small"></span>
-                            </div>
+    .register-card {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        background: white;
+        margin-bottom: 30px;
+    }
 
-                            <!-- Gender -->
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="Gender" class="form-label fw-bold"></label>
-                                <select asp-for="Gender" class="form-select">
-                                    <option value="">-- Select Gender --</option>
-                                    <option value="Male">Male</option>
-                                    <option value="Female">Female</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                                <span asp-validation-for="Gender" class="text-danger small"></span>
-                            </div>
-                        </div>
+    .register-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        padding: 35px 30px;
+        text-align: center;
+        border: none;
+    }
 
-                        <div class="row">
-                            <!-- Credit Card Number -->
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="CreditCardNo" class="form-label fw-bold"></label>
-                                <input asp-for="CreditCardNo" class="form-control" placeholder="16-digit card number" maxlength="16" />
-                                <span asp-validation-for="CreditCardNo" class="text-danger small"></span>
-                                <small class="text-muted">Will be encrypted and stored securely</small>
-                            </div>
+    .register-header h3 {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: white;
+    }
 
-                            <!-- Mobile Number -->
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="MobileNo" class="form-label fw-bold"></label>
-                                <input asp-for="MobileNo" class="form-control" placeholder="8xxxxxxx or 9xxxxxxx" maxlength="8" />
-                                <span asp-validation-for="MobileNo" class="text-danger small"></span>
-                            </div>
-                        </div>
+    .register-header p {
+        font-size: 15px;
+        color: rgba(255, 255, 255, 0.95);
+        margin: 0;
+    }
 
-                        <!-- Delivery Address -->
-                        <div class="mb-3">
-                            <label asp-for="DeliveryAddress" class="form-label fw-bold"></label>
-                            <textarea asp-for="DeliveryAddress" class="form-control" rows="2" placeholder="Enter your delivery address"></textarea>
-                            <span asp-validation-for="DeliveryAddress" class="text-danger small"></span>
-                        </div>
+    .register-icon {
+        font-size: 48px;
+        margin-bottom: 12px;
+    }
 
-                        <!-- Email -->
-                        <div class="mb-3">
-                            <label asp-for="Email" class="form-label fw-bold"></label>
-                            <input asp-for="Email" class="form-control" placeholder="your.email@example.com" />
-                            <span asp-validation-for="Email" class="text-danger small"></span>
-                        </div>
+    .register-body {
+        padding: 40px 35px;
+    }
 
-                        <div class="row">
-                            <!-- Password -->
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="Password" class="form-label fw-bold"></label>
-                                <input asp-for="Password" class="form-control" placeholder="Min 12 characters" id="password" />
-                                <span asp-validation-for="Password" class="text-danger small"></span>
-                                
-                                <!-- Password Strength Indicator -->
-                                <div class="progress mt-2" style="height: 5px;">
-                                    <div id="passwordStrength" class="progress-bar" role="progressbar" style="width: 0%"></div>
+    .section-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #28a745;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e3e6f0;
+        display: flex;
+        align-items: center;
+    }
+
+    .section-title i {
+        margin-right: 10px;
+        font-size: 22px;
+    }
+
+    .form-label-custom {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+        font-size: 14px;
+        display: block;
+    }
+
+    .form-control-custom {
+        border: 2px solid #e3e6f0;
+        border-radius: 10px;
+        padding: 12px 18px;
+        font-size: 15px;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .form-control-custom:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.15);
+        outline: none;
+    }
+
+    .form-select-custom {
+        border: 2px solid #e3e6f0;
+        border-radius: 10px;
+        padding: 12px 18px;
+        font-size: 15px;
+        transition: all 0.3s ease;
+        width: 100%;
+    }
+
+    .form-select-custom:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.15);
+        outline: none;
+    }
+
+    textarea.form-control-custom {
+        resize: vertical;
+    }
+
+    .form-group-spacing {
+        margin-bottom: 20px;
+    }
+
+    .password-strength-container {
+        margin-top: 10px;
+        margin-bottom: 8px;
+    }
+
+    .progress-custom {
+        height: 6px;
+        border-radius: 10px;
+        background-color: #f0f0f0;
+        overflow: hidden;
+    }
+
+    .password-strength-text {
+        display: block;
+        margin-top: 6px;
+        font-size: 13px;
+        font-weight: 500;
+    }
+
+    .photo-preview-container {
+        margin-top: 15px;
+        text-align: center;
+    }
+
+    .photo-preview {
+        max-width: 200px;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .requirements-box {
+        background: #f8f9fc;
+        border-left: 4px solid #28a745;
+        padding: 18px 20px;
+        border-radius: 10px;
+        margin-bottom: 25px;
+    }
+
+    .requirements-box strong {
+        color: #28a745;
+        font-size: 15px;
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    .requirements-box ul {
+        margin: 0;
+        padding-left: 20px;
+    }
+
+    .requirements-box li {
+        color: #5a6c7d;
+        font-size: 13px;
+        margin-bottom: 5px;
+        line-height: 1.5;
+    }
+
+    .requirements-box li:last-child {
+        margin-bottom: 0;
+    }
+
+    .helper-text {
+        display: block;
+        margin-top: 5px;
+        font-size: 12px;
+        color: #6c757d;
+    }
+
+    .btn-submit-custom {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        padding: 16px 30px;
+        font-size: 17px;
+        font-weight: 600;
+        border-radius: 12px;
+        color: white;
+        width: 100%;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        position: relative;
+        z-index: 1000;
+        margin-top: 10px;
+    }
+
+    .btn-submit-custom:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+    }
+
+    .btn-submit-custom:active {
+        transform: translateY(0);
+    }
+
+    .btn-submit-custom:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    .btn-submit-custom i {
+        margin-right: 10px;
+        font-size: 18px;
+    }
+
+    .btn-submit-custom .spinner-border {
+        width: 18px;
+        height: 18px;
+        margin-right: 10px;
+    }
+
+    .login-link-section {
+        text-align: center;
+        padding: 18px;
+        background: #f8f9fc;
+        border-radius: 12px;
+        margin-top: 20px;
+    }
+
+    .login-link-section p {
+        margin: 0;
+        color: #5a6c7d;
+    }
+
+    .login-link {
+        color: #28a745;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .login-link:hover {
+        color: #20c997;
+        text-decoration: underline;
+    }
+
+    .alert-custom {
+        border-radius: 10px;
+        padding: 15px 20px;
+        margin-bottom: 25px;
+        border: none;
+    }
+
+    .validation-message {
+        display: block;
+        margin-top: 6px;
+        font-size: 13px;
+    }
+
+    .section-spacing {
+        margin-bottom: 35px;
+    }
+</style>
+
+<div class="register-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-9 col-lg-8">
+                <div class="register-card">
+                    <div class="register-header">
+                        <div class="register-icon">👤</div>
+                        <h3>Create Your Account</h3>
+                        <p>Join Fresh Farm Market today!</p>
+                    </div>
+                    <div class="register-body">
+                        <form asp-action="Register" method="post" enctype="multipart/form-data" id="registerForm">
+                            @Html.AntiForgeryToken()
+                            
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger alert-custom" role="alert"></div>
+
+                            <!-- Personal Information Section -->
+                            <div class="section-spacing">
+                                <div class="section-title">
+                                    <i class="bi bi-person-circle"></i> Personal Information
                                 </div>
-                                <small id="passwordStrengthText" class="text-muted"></small>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 form-group-spacing">
+                                        <label asp-for="FullName" class="form-label-custom">Full Name</label>
+                                        <input asp-for="FullName" class="form-control-custom" placeholder="Enter your full name" />
+                                        <span asp-validation-for="FullName" class="text-danger validation-message"></span>
+                                    </div>
+
+                                    <div class="col-md-6 form-group-spacing">
+                                        <label asp-for="Gender" class="form-label-custom">Gender</label>
+                                        <select asp-for="Gender" class="form-select-custom">
+                                            <option value="">-- Select Gender --</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                        <span asp-validation-for="Gender" class="text-danger validation-message"></span>
+                                    </div>
+                                </div>
+
+                                <div class="form-group-spacing">
+                                    <label asp-for="AboutMe" class="form-label-custom">About Me</label>
+                                    <textarea asp-for="AboutMe" class="form-control-custom" rows="3" placeholder="Tell us about yourself (optional)"></textarea>
+                                    <span asp-validation-for="AboutMe" class="text-danger validation-message"></span>
+                                </div>
+
+                                <div class="form-group-spacing">
+                                    <label asp-for="Photo" class="form-label-custom">Profile Photo</label>
+                                    <input asp-for="Photo" class="form-control-custom" type="file" accept=".jpg,.jpeg" id="photoUpload" />
+                                    <span asp-validation-for="Photo" class="text-danger validation-message"></span>
+                                    <small class="helper-text">Only .JPG files, max 5MB</small>
+                                    <div class="photo-preview-container">
+                                        <img id="photoPreview" class="photo-preview" style="display: none;" />
+                                    </div>
+                                </div>
                             </div>
 
-                            <!-- Confirm Password -->
-                            <div class="col-md-6 mb-3">
-                                <label asp-for="ConfirmPassword" class="form-label fw-bold"></label>
-                                <input asp-for="ConfirmPassword" class="form-control" placeholder="Re-enter password" />
-                                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                            <!-- Contact & Delivery Section -->
+                            <div class="section-spacing">
+                                <div class="section-title">
+                                    <i class="bi bi-geo-alt-fill"></i> Contact & Delivery
+                                </div>
+                                
+                                <div class="form-group-spacing">
+                                    <label asp-for="Email" class="form-label-custom">Email Address</label>
+                                    <input asp-for="Email" class="form-control-custom" placeholder="your.email@example.com" />
+                                    <span asp-validation-for="Email" class="text-danger validation-message"></span>
+                                </div>
+
+                                <div class="form-group-spacing">
+                                    <label asp-for="MobileNo" class="form-label-custom">Mobile Number</label>
+                                    <input asp-for="MobileNo" class="form-control-custom" placeholder="8xxxxxxx or 9xxxxxxx" maxlength="8" />
+                                    <span asp-validation-for="MobileNo" class="text-danger validation-message"></span>
+                                </div>
+
+                                <div class="form-group-spacing">
+                                    <label asp-for="DeliveryAddress" class="form-label-custom">Delivery Address</label>
+                                    <textarea asp-for="DeliveryAddress" class="form-control-custom" rows="2" placeholder="Enter your delivery address"></textarea>
+                                    <span asp-validation-for="DeliveryAddress" class="text-danger validation-message"></span>
+                                </div>
                             </div>
-                        </div>
 
-                        <!-- Photo Upload -->
-                        <div class="mb-3">
-                            <label asp-for="Photo" class="form-label fw-bold"></label>
-                            <input asp-for="Photo" class="form-control" type="file" accept=".jpg,.jpeg" id="photoUpload" />
-                            <span asp-validation-for="Photo" class="text-danger small"></span>
-                            <small class="text-muted d-block">Only .JPG files, max 5MB</small>
-                            <img id="photoPreview" class="mt-2" style="max-width: 200px; display: none;" />
-                        </div>
+                            <!-- Payment Information Section -->
+                            <div class="section-spacing">
+                                <div class="section-title">
+                                    <i class="bi bi-credit-card-fill"></i> Payment Information
+                                </div>
+                                
+                                <div class="form-group-spacing">
+                                    <label asp-for="CreditCardNo" class="form-label-custom">Credit Card Number</label>
+                                    <input asp-for="CreditCardNo" class="form-control-custom" placeholder="16-digit card number" maxlength="16" />
+                                    <span asp-validation-for="CreditCardNo" class="text-danger validation-message"></span>
+                                    <small class="helper-text">🔒 Will be encrypted and stored securely</small>
+                                </div>
+                            </div>
 
-                        <!-- About Me -->
-                        <div class="mb-3">
-                            <label asp-for="AboutMe" class="form-label fw-bold"></label>
-                            <textarea asp-for="AboutMe" class="form-control" rows="3" placeholder="Tell us about yourself (optional)"></textarea>
-                            <span asp-validation-for="AboutMe" class="text-danger small"></span>
-                        </div>
+                            <!-- Security Section -->
+                            <div class="section-spacing">
+                                <div class="section-title">
+                                    <i class="bi bi-shield-lock-fill"></i> Account Security
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 form-group-spacing">
+                                        <label asp-for="Password" class="form-label-custom">Password</label>
+                                        <input asp-for="Password" class="form-control-custom" placeholder="Min 12 characters" id="password" />
+                                        <span asp-validation-for="Password" class="text-danger validation-message"></span>
+                                        
+                                        <!-- Password Strength Indicator -->
+                                        <div class="password-strength-container">
+                                            <div class="progress-custom">
+                                                <div id="passwordStrength" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                            </div>
+                                            <span id="passwordStrengthText" class="password-strength-text"></span>
+                                        </div>
+                                    </div>
 
-                        <!-- reCAPTCHA Hidden Field -->
-                        <input type="hidden" id="recaptchaToken" name="RecaptchaToken" />
+                                    <div class="col-md-6 form-group-spacing">
+                                        <label asp-for="ConfirmPassword" class="form-label-custom">Confirm Password</label>
+                                        <input asp-for="ConfirmPassword" class="form-control-custom" placeholder="Re-enter password" />
+                                        <span asp-validation-for="ConfirmPassword" class="text-danger validation-message"></span>
+                                    </div>
+                                </div>
 
-                        <!-- Password Requirements -->
-                        <div class="alert alert-info small">
-                            <strong>Password Requirements:</strong>
-                            <ul class="mb-0">
-                                <li>At least 12 characters long</li>
-                                <li>Contains uppercase letter (A-Z)</li>
-                                <li>Contains lowercase letter (a-z)</li>
-                                <li>Contains number (0-9)</li>
-                                <li>Contains special character (@@@@, $, !, %, *, ?, &amp;, etc.)</li>
-                            </ul>
-                        </div>
+                                <!-- Password Requirements -->
+                                <div class="requirements-box">
+                                    <strong><i class="bi bi-shield-check"></i> Password Requirements:</strong>
+                                    <ul>
+                                        <li>At least 12 characters long</li>
+                                        <li>Contains uppercase letter (A-Z)</li>
+                                        <li>Contains lowercase letter (a-z)</li>
+                                        <li>Contains number (0-9)</li>
+                                        <li>Contains special character (@@, $, !, %, *, ?, &amp;, etc.)</li>
+                                    </ul>
+                                </div>
+                            </div>
 
-                        <!-- Submit Button -->
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-success btn-lg">
+                            <!-- reCAPTCHA Hidden Field -->
+                            <input type="hidden" id="recaptchaToken" name="RecaptchaToken" />
+
+                            <!-- Submit Button -->
+                            <button type="submit" class="btn-submit-custom" id="submitBtn">
                                 <i class="bi bi-check-circle-fill"></i> Create Account
                             </button>
-                        </div>
 
-                        <div class="text-center mt-3">
-                            <p>Already have an account? <a asp-action="Login" class="text-decoration-none fw-bold">Login here</a></p>
-                        </div>
-                    </form>
+                            <div class="login-link-section">
+                                <p>Already have an account? <a asp-action="Login" class="login-link">Login here</a></p>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>
@@ -150,6 +434,12 @@
         document.getElementById('registerForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const form = this;
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Creating Account...';
+            }
             
             grecaptcha.ready(function() {
                 grecaptcha.execute('6Lf7xVIsAAAAADlZKBz6FFK6O3P_VNDj38q5xVNa', {action: 'register'})
@@ -167,7 +457,6 @@
             const strengthText = document.getElementById('passwordStrengthText');
             
             let strength = 0;
-            let feedback = [];
             
             if (password.length >= 12) strength++;
             if (/[a-z]/.test(password)) strength++;
@@ -183,20 +472,38 @@
                 strengthText.textContent = '';
             } else if (strength <= 2) {
                 strengthBar.className = 'progress-bar bg-danger';
-                strengthText.textContent = 'Weak password';
-                strengthText.className = 'text-danger small';
+                strengthText.textContent = '⚠️ Weak password';
+                strengthText.style.color = '#dc3545';
             } else if (strength === 3) {
                 strengthBar.className = 'progress-bar bg-warning';
-                strengthText.textContent = 'Moderate password';
-                strengthText.className = 'text-warning small';
+                strengthText.textContent = '⚡ Moderate password';
+                strengthText.style.color = '#ffc107';
             } else if (strength === 4) {
                 strengthBar.className = 'progress-bar bg-info';
-                strengthText.textContent = 'Good password';
-                strengthText.className = 'text-info small';
+                strengthText.textContent = '✓ Good password';
+                strengthText.style.color = '#0dcaf0';
             } else {
                 strengthBar.className = 'progress-bar bg-success';
-                strengthText.textContent = 'Strong password!';
-                strengthText.className = 'text-success small';
+                strengthText.textContent = '✓✓ Strong password!';
+                strengthText.style.color = '#28a745';
+            }
+        });
+
+        // Photo Preview
+        document.getElementById('photoUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('photoPreview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+}
             }
         });
 

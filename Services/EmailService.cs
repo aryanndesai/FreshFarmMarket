@@ -1,25 +1,68 @@
 using System;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
-using SendGrid;
-using SendGrid.Helpers.Mail;
 
 namespace FreshFarmMarket.Services
 {
     public class EmailService
     {
         private readonly IConfiguration _configuration;
+        private readonly HttpClient _httpClient;
 
         public EmailService(IConfiguration configuration)
         {
             _configuration = configuration;
+            _httpClient = new HttpClient();
+            var apiKey = _configuration["Email:ResendApiKey"];
+            _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
+        }
+
+        // Main method to send any email
+        public async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
+        {
+            try
+            {
+                var fromEmail = _configuration["Email:FromEmail"] ?? "onboarding@resend.dev";
+                var fromName = _configuration["Email:FromName"] ?? "Fresh Farm Market";
+
+                var emailData = new
+                {
+                    from = fromEmail,
+                    to = new[] { toEmail },
+                    subject = subject,
+                    html = htmlBody
+                };
+
+                var json = JsonSerializer.Serialize(emailData);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                var response = await _httpClient.PostAsync("https://api.resend.com/emails", content);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    Console.WriteLine($"Email sent successfully to {toEmail}");
+                }
+                else
+                {
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    throw new Exception($"Failed to send email: {response.StatusCode} - {errorContent}");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Log the error but don't crash the application
+                Console.WriteLine($"Email sending failed: {ex.Message}");
+                throw new Exception($"Email service error: {ex.Message}");
+            }
         }
 
         public async Task SendPasswordResetEmailAsync(string email, string resetLink)
         {
             var subject = "Reset Your Password - Fresh Farm Market";
-            var htmlBody =
-                $@"
+            var htmlBody = $@"
                 <html>
                 <body style='font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4;'>
                     <div style='max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);'>
@@ -28,10 +71,8 @@ namespace FreshFarmMarket.Services
                         </h2>
                         <p style='font-size: 16px; color: #333; line-height: 1.6;'>Hi there,</p>
                         <p style='font-size: 16px; color: #333; line-height: 1.6;'>
-                            You requested to reset your password for your Fresh Farm Market account.
-                        </p>
-                        <p style='font-size: 16px; color: #333; line-height: 1.6;'>
-                            Click the button below to reset your password:
+                            We received a request to reset your password for your Fresh Farm Market account. 
+                            Click the button below to create a new password:
                         </p>
                         <div style='text-align: center; margin: 30px 0;'>
                             <a href='{resetLink}' 
@@ -46,15 +87,9 @@ namespace FreshFarmMarket.Services
                                 Reset Password
                             </a>
                         </div>
-                        <p style='font-size: 14px; color: #666; line-height: 1.6;'>
-                            Or copy and paste this link into your browser:
-                        </p>
-                        <p style='font-size: 14px; color: #0066cc; word-break: break-all;'>
-                            {resetLink}
-                        </p>
                         <div style='background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;'>
                             <p style='margin: 0; color: #856404; font-size: 14px;'>
-                                <strong>⚠️ Security Notice:</strong> This link will expire in 1 hour.
+                                <strong>Important:</strong> This link will expire in 1 hour for security reasons.
                             </p>
                         </div>
                         <p style='font-size: 14px; color: #666; line-height: 1.6;'>
@@ -74,11 +109,11 @@ namespace FreshFarmMarket.Services
             await SendEmailAsync(email, subject, htmlBody);
         }
 
+        // Send two-factor authentication code
         public async Task SendTwoFactorCodeAsync(string email, string code)
         {
             var subject = "Your Verification Code - Fresh Farm Market";
-            var htmlBody =
-                $@"
+            var htmlBody = $@"
                 <html>
                 <body style='font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4;'>
                     <div style='max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);'>
@@ -107,7 +142,7 @@ namespace FreshFarmMarket.Services
                         </div>
                         <div style='background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px; margin: 20px 0;'>
                             <p style='margin: 0; color: #856404; font-size: 14px;'>
-                                <strong>⏰ Important:</strong> This code will expire in 5 minutes.
+                                <strong>Important:</strong> This code will expire in 5 minutes.
                             </p>
                         </div>
                         <p style='font-size: 14px; color: #666; line-height: 1.6;'>
@@ -127,11 +162,11 @@ namespace FreshFarmMarket.Services
             await SendEmailAsync(email, subject, htmlBody);
         }
 
+        // Send welcome email to new users
         public async Task SendWelcomeEmailAsync(string email, string fullName)
         {
             var subject = "Welcome to Fresh Farm Market! 🌱";
-            var htmlBody =
-                $@"
+            var htmlBody = $@"
                 <html>
                 <body style='font-family: Arial, sans-serif; padding: 20px; background-color: #f4f4f4;'>
                     <div style='max-width: 600px; margin: 0 auto; background-color: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);'>
@@ -182,40 +217,6 @@ namespace FreshFarmMarket.Services
             ";
 
             await SendEmailAsync(email, subject, htmlBody);
-        }
-
-        private async Task SendEmailAsync(string toEmail, string subject, string htmlBody)
-        {
-            try
-            {
-                var apiKey = _configuration["Email:SendGridApiKey"];
-                var fromEmail = _configuration["Email:FromEmail"];
-                var fromName = _configuration["Email:FromName"];
-
-                var client = new SendGridClient(apiKey);
-                var from = new EmailAddress(fromEmail, fromName);
-                var to = new EmailAddress(toEmail);
-                var msg = MailHelper.CreateSingleEmail(from, to, subject, "", htmlBody);
-
-                var response = await client.SendEmailAsync(msg);
-
-                // Log the response for debugging
-                if (response.IsSuccessStatusCode)
-                {
-                    Console.WriteLine($"✅ Email sent successfully to {toEmail}");
-                }
-                else
-                {
-                    var responseBody = await response.Body.ReadAsStringAsync();
-                    Console.WriteLine($"❌ SendGrid error: {response.StatusCode} - {responseBody}");
-                    throw new Exception($"SendGrid error: {response.StatusCode} - {responseBody}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Email sending failed: {ex.Message}");
-                throw;
-            }
         }
     }
 }

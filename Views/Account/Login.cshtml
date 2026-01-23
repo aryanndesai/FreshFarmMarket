@@ -3,91 +3,341 @@
     ViewData["Title"] = "Login - Fresh Farm Market";
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-5">
-            <div class="card shadow-lg">
-                <div class="card-header bg-success text-white text-center">
-                    <h3 class="mb-0"><i class="bi bi-box-arrow-in-right"></i> Welcome Back!</h3>
-                    <p class="mb-0 small">Login to Fresh Farm Market</p>
-                </div>
-                <div class="card-body p-4">
-                    @if (TempData["SuccessMessage"] != null)
-                    {
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    }
+<style>
+    .login-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        padding: 40px 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
 
-                    @if (TempData["ErrorMessage"] != null)
-                    {
-                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                            <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    }
+    .login-card {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        background: white;
+    }
 
-                    @if (TempData["WarningMessage"] != null)
-                    {
-                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                            <i class="bi bi-exclamation-circle-fill"></i> @TempData["WarningMessage"]
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    }
+    .login-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        padding: 40px 30px;
+        text-align: center;
+        border: none;
+    }
 
-                    <form asp-action="Login" method="post">
-                        @Html.AntiForgeryToken()
-                        
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+    .login-header h3 {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: white;
+    }
 
-                        <!-- Email -->
-                        <div class="mb-3">
-                            <label asp-for="Email" class="form-label fw-bold"></label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
-                                <input asp-for="Email" class="form-control" placeholder="your.email@example.com" autofocus />
+    .login-header p {
+        font-size: 16px;
+        color: rgba(255, 255, 255, 0.95);
+        margin: 0;
+    }
+
+    .welcome-icon {
+        font-size: 56px;
+        margin-bottom: 15px;
+    }
+
+    .login-body {
+        padding: 40px 35px;
+    }
+
+    .form-label-custom {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+        font-size: 14px;
+    }
+
+    .input-group-custom {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .input-group-custom .input-icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #6c757d;
+        font-size: 18px;
+        z-index: 10;
+    }
+
+    .form-control-custom {
+        border: 2px solid #e3e6f0;
+        border-radius: 12px;
+        padding: 14px 18px 14px 48px;
+        font-size: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .form-control-custom:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.15);
+    }
+
+    .btn-login-custom {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        padding: 16px 30px;
+        font-size: 17px;
+        font-weight: 600;
+        border-radius: 12px;
+        color: white;
+        width: 100%;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        position: relative;
+        z-index: 1000;
+        margin-bottom: 15px;
+    }
+
+    .btn-login-custom:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+    }
+
+    .btn-login-custom:active {
+        transform: translateY(0);
+    }
+
+    .btn-login-custom i {
+        margin-right: 10px;
+        font-size: 18px;
+    }
+
+    .forgot-password-link {
+        color: #28a745;
+        font-weight: 500;
+        text-decoration: none;
+        font-size: 14px;
+        transition: all 0.3s ease;
+    }
+
+    .forgot-password-link:hover {
+        color: #20c997;
+        text-decoration: underline;
+    }
+
+    .divider {
+        position: relative;
+        text-align: center;
+        margin: 25px 0;
+    }
+
+    .divider::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        width: 100%;
+        height: 1px;
+        background: #e0e0e0;
+    }
+
+    .divider span {
+        position: relative;
+        background: white;
+        padding: 0 15px;
+        color: #999;
+        font-size: 14px;
+    }
+
+    .register-section {
+        text-align: center;
+        padding: 20px;
+        background: #f8f9fc;
+        border-radius: 12px;
+        margin-top: 10px;
+    }
+
+    .register-section p {
+        margin: 0;
+        color: #5a6c7d;
+    }
+
+    .register-link {
+        color: #28a745;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+    }
+
+    .register-link:hover {
+        color: #20c997;
+        text-decoration: underline;
+    }
+
+    .security-badge {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 12px;
+        text-align: center;
+        margin-top: 25px;
+        font-size: 14px;
+        box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+    }
+
+    .security-badge i {
+        margin-right: 8px;
+        font-size: 18px;
+    }
+
+    .alert-custom {
+        border-radius: 12px;
+        padding: 15px 20px;
+        margin-bottom: 20px;
+        border: none;
+        font-size: 14px;
+    }
+
+    .alert-success-custom {
+        background: #d4edda;
+        color: #155724;
+        border-left: 4px solid #28a745;
+    }
+
+    .alert-danger-custom {
+        background: #f8d7da;
+        color: #721c24;
+        border-left: 4px solid #dc3545;
+    }
+
+    .alert-warning-custom {
+        background: #fff3cd;
+        color: #856404;
+        border-left: 4px solid #ffc107;
+    }
+
+    .close-btn {
+        background: none;
+        border: none;
+        font-size: 20px;
+        cursor: pointer;
+        opacity: 0.5;
+        transition: opacity 0.3s;
+    }
+
+    .close-btn:hover {
+        opacity: 1;
+    }
+</style>
+
+<div class="login-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-5 col-md-7 col-sm-10">
+                <div class="card login-card">
+                    <div class="card-header login-header">
+                        <div class="welcome-icon">🌱</div>
+                        <h3>Welcome Back!</h3>
+                        <p>Login to Fresh Farm Market</p>
+                    </div>
+                    
+                    <div class="card-body login-body">
+                        @if (TempData["SuccessMessage"] != null)
+                        {
+                            <div class="alert alert-success-custom alert-dismissible fade show" role="alert">
+                                <i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]
+                                <button type="button" class="btn-close close-btn" data-bs-dismiss="alert"></button>
                             </div>
-                            <span asp-validation-for="Email" class="text-danger small"></span>
-                        </div>
+                        }
 
-                        <!-- Password -->
-                        <div class="mb-3">
-                            <label asp-for="Password" class="form-label fw-bold"></label>
-                            <div class="input-group">
-                                <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
-                                <input asp-for="Password" class="form-control" placeholder="Enter your password" />
+                        @if (TempData["ErrorMessage"] != null)
+                        {
+                            <div class="alert alert-danger-custom alert-dismissible fade show" role="alert">
+                                <i class="bi bi-exclamation-triangle-fill"></i> @TempData["ErrorMessage"]
+                                <button type="button" class="btn-close close-btn" data-bs-dismiss="alert"></button>
                             </div>
-                            <span asp-validation-for="Password" class="text-danger small"></span>
-                        </div>
+                        }
 
-                        <!-- Forgot Password Link -->
-                        <div class="mb-3 text-end">
-                            <a asp-action="ForgotPassword" class="text-decoration-none small">Forgot Password?</a>
-                        </div>
+                        @if (TempData["WarningMessage"] != null)
+                        {
+                            <div class="alert alert-warning-custom alert-dismissible fade show" role="alert">
+                                <i class="bi bi-exclamation-circle-fill"></i> @TempData["WarningMessage"]
+                                <button type="button" class="btn-close close-btn" data-bs-dismiss="alert"></button>
+                            </div>
+                        }
 
-                        <!-- reCAPTCHA Hidden Field -->
-                        <input type="hidden" id="recaptchaToken" name="RecaptchaToken" />
+                        <form asp-action="Login" method="post" id="loginForm">
+                            @Html.AntiForgeryToken()
+                            
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger-custom" role="alert"></div>
 
-                        <!-- Submit Button -->
-                        <div class="d-grid gap-2 mb-3">
-                            <button type="submit" class="btn btn-success btn-lg">
-                                <i class="bi bi-box-arrow-in-right"></i> Login
-                            </button>
-                        </div>
+                            <!-- Email Field -->
+                            <div class="mb-3">
+                                <label asp-for="Email" class="form-label-custom">Email Address</label>
+                                <div class="input-group-custom">
+                                    <i class="bi bi-envelope-fill input-icon"></i>
+                                    <input asp-for="Email" 
+                                           type="email"
+                                           class="form-control form-control-custom" 
+                                           placeholder="your.email@example.com" 
+                                           autofocus 
+                                           autocomplete="email" />
+                                </div>
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
 
-                        <hr />
+                            <!-- Password Field -->
+                            <div class="mb-3">
+                                <label asp-for="Password" class="form-label-custom">Password</label>
+                                <div class="input-group-custom">
+                                    <i class="bi bi-lock-fill input-icon"></i>
+                                    <input asp-for="Password" 
+                                           type="password"
+                                           class="form-control form-control-custom" 
+                                           placeholder="Enter your password" 
+                                           autocomplete="current-password" />
+                                </div>
+                                <span asp-validation-for="Password" class="text-danger small"></span>
+                            </div>
 
-                        <div class="text-center">
-                            <p class="mb-0">Don't have an account? <a asp-action="Register" class="text-decoration-none fw-bold">Register here</a></p>
-                        </div>
-                    </form>
+                            <!-- Forgot Password Link -->
+                            <div class="mb-3 text-end">
+                                <a asp-action="ForgotPassword" class="forgot-password-link">
+                                    <i class="bi bi-key-fill"></i> Forgot Password?
+                                </a>
+                            </div>
+
+                            <!-- reCAPTCHA Hidden Field -->
+                            <input type="hidden" id="recaptchaToken" name="RecaptchaToken" />
+
+                            <!-- Submit Button -->
+                            <div style="position: relative; z-index: 1000;">
+                                <button type="submit" class="btn btn-login-custom" id="loginBtn">
+                                    <i class="bi bi-box-arrow-in-right"></i>
+                                    Login to Account
+                                </button>
+                            </div>
+
+                            <div class="divider">
+                                <span>OR</span>
+                            </div>
+
+                            <div class="register-section">
+                                <p>Don't have an account? <a asp-action="Register" class="register-link">Create Account</a></p>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-            </div>
 
-            <!-- Security Info -->
-            <div class="alert alert-info mt-3 small text-center">
-                <i class="bi bi-shield-check"></i> Your account will be locked for 10 minutes after 3 failed login attempts
+                <!-- Security Info -->
+                <div class="security-badge">
+                    <i class="bi bi-shield-check"></i>
+                    <strong>Protected:</strong> Account locks for 10 minutes after 3 failed login attempts
+                </div>
             </div>
         </div>
     </div>
@@ -100,23 +350,36 @@
     <script src="https://www.google.com/recaptcha/api.js?render=6Lf7xVIsAAAAADlZKBz6FFK6O3P_VNDj38q5xVNa"></script>
     
     <script>
-        // Make sure form has an ID
-        const loginForm = document.querySelector('form');
-        if (!loginForm.id) {
-            loginForm.id = 'loginForm';
-        }
-        
-        // Prevent form submission and execute reCAPTCHA first
-        document.getElementById('loginForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const form = this;
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginBtn = document.getElementById('loginBtn');
+            const loginForm = document.getElementById('loginForm');
             
-            grecaptcha.ready(function() {
-                grecaptcha.execute('6Lf7xVIsAAAAADlZKBz6FFK6O3P_VNDj38q5xVNa', {action: 'login'})
-                    .then(function(token) {
-                        document.getElementById('recaptchaToken').value = token;
-                        form.submit();
-                    });
+            // Ensure button is clickable
+            loginBtn.style.position = 'relative';
+            loginBtn.style.zIndex = '1000';
+            loginBtn.style.pointerEvents = 'auto';
+            
+            // Prevent form submission and execute reCAPTCHA first
+            loginForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const form = this;
+                
+                // Add loading state
+                loginBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Logging in...';
+                loginBtn.disabled = true;
+                
+                grecaptcha.ready(function() {
+                    grecaptcha.execute('6Lf7xVIsAAAAADlZKBz6FFK6O3P_VNDj38q5xVNa', {action: 'login'})
+                        .then(function(token) {
+                            document.getElementById('recaptchaToken').value = token;
+                            form.submit();
+                        })
+                        .catch(function(error) {
+                            console.error('reCAPTCHA error:', error);
+                            loginBtn.innerHTML = '<i class="bi bi-box-arrow-in-right"></i> Login to Account';
+                            loginBtn.disabled = false;
+                        });
+                });
             });
         });
     </script>

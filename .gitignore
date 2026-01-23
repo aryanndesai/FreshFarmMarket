@@ -5,6 +5,30 @@ obj/
 *.user
 *.suo
 
+# Build artifacts and compiled files
+*.dll
+*.exe
+*.pdb
+*.cache
+*.AssemblyInfo.cs
+*.AssemblyInfoInputs.cache
+*.assets.cache
+*.SourceLink.json
+project.assets.json
+project.nuget.cache
+*.csproj.nuget.dgspec.json
+*.csproj.nuget.g.props
+*.csproj.nuget.g.targets
+FreshFarmMarket.deps.json
+FreshFarmMarket.runtimeconfig.json
+apphost.exe
+FreshFarmMarket.dll
+FreshFarmMarket.pdb
+
+# NuGet packages folder
+packages/
+*.nupkg
+
 # Database files
 *.db
 *.db-shm
@@ -29,3 +53,44 @@ keys/
 # OS
 .DS_Store
 Thumbs.db
+
+# Logs
+logs/
+*.log
+```
+
+## What Files to Commit vs Ignore
+
+### ✅ COMMIT These:
+```
+✓ .gitignore
+✓ *.cs (all C# source files)
+✓ *.cshtml (all Razor views)
+✓ *.csproj (project file)
+✓ *.sln (solution file)
+✓ appsettings.template.json (template only!)
+✓ README.md
+✓ CONFIG_README.md
+✓ wwwroot/css/
+✓ wwwroot/js/
+✓ wwwroot/lib/ (if not using CDN)
+```
+
+### ❌ DO NOT COMMIT These:
+```
+✗ bin/
+✗ obj/
+✗ *.db (database files)
+✗ *.exe
+✗ *.dll
+✗ *.pdb
+✗ *.cache
+✗ apphost.exe
+✗ *.nuget.* files
+✗ project.assets.json
+✗ project.nuget.cache
+✗ *.SourceLink.json
+✗ appsettings.json (has your API keys!)
+✗ appsettings.Development.json
+✗ keys/ (encryption keys)
+✗ wwwroot/uploads/ (user uploads)

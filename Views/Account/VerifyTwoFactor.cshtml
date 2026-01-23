@@ -1,72 +1,341 @@
 @model FreshFarmMarket.ViewModels.VerifyTwoFactorViewModel
 @{
-    ViewData["Title"] = "Two-Factor Authentication";
+    ViewData["Title"] = "Two-Factor Authentication - Fresh Farm Market";
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-5">
-            <div class="card shadow-lg">
-                <div class="card-header bg-primary text-white text-center">
-                    <h3 class="mb-0"><i class="bi bi-shield-check"></i> Verify Your Identity</h3>
-                </div>
-                <div class="card-body p-4 text-center">
-                    @if (TempData["SuccessMessage"] != null)
-                    {
-                        <div class="alert alert-success alert-dismissible fade show" role="alert">
-                            <i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    }
+<style>
+    .verify-2fa-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        padding: 40px 0;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
 
-                    <div class="mb-4">
-                        <i class="bi bi-envelope-check" style="font-size: 3rem; color: #0d6efd;"></i>
-                        <p class="mt-3">We've sent a 6-digit verification code to:</p>
-                        <strong>@Model.Email</strong>
+    .verify-2fa-card {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        background: white;
+    }
+
+    .verify-2fa-header {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        padding: 40px 30px;
+        text-align: center;
+        border: none;
+    }
+
+    .verify-2fa-header h3 {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 10px;
+        color: white;
+    }
+
+    .verify-2fa-header p {
+        font-size: 16px;
+        color: rgba(255, 255, 255, 0.95);
+        margin: 0;
+    }
+
+    .shield-icon {
+        font-size: 56px;
+        margin-bottom: 15px;
+    }
+
+    .verify-2fa-body {
+        padding: 40px 35px;
+        text-align: center;
+    }
+
+    .email-info-box {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+        padding: 25px;
+        border-radius: 12px;
+        margin-bottom: 30px;
+        box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+    }
+
+    .email-info-box i {
+        font-size: 48px;
+        margin-bottom: 15px;
+        display: block;
+    }
+
+    .email-info-box p {
+        margin: 0 0 10px 0;
+        font-size: 15px;
+    }
+
+    .email-info-box strong {
+        font-size: 17px;
+        font-weight: 600;
+    }
+
+    .form-label-custom {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 12px;
+        font-size: 15px;
+        display: block;
+    }
+
+    .code-input-custom {
+        border: 2px solid #e3e6f0;
+        border-radius: 12px;
+        padding: 20px;
+        font-size: 32px;
+        transition: all 0.3s ease;
+        width: 100%;
+        text-align: center;
+        letter-spacing: 0.8em;
+        font-weight: 600;
+        font-family: 'Courier New', monospace;
+    }
+
+    .code-input-custom:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.15);
+        outline: none;
+    }
+
+    .code-input-custom::placeholder {
+        letter-spacing: normal;
+        font-size: 18px;
+        font-family: inherit;
+        font-weight: normal;
+    }
+
+    .btn-verify-custom {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        padding: 16px 30px;
+        font-size: 17px;
+        font-weight: 600;
+        border-radius: 12px;
+        color: white;
+        width: 100%;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+        position: relative;
+        z-index: 1000;
+        margin-bottom: 20px;
+    }
+
+    .btn-verify-custom:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+        background: linear-gradient(135deg, #20c997 0%, #28a745 100%);
+    }
+
+    .btn-verify-custom:active {
+        transform: translateY(0);
+    }
+
+    .btn-verify-custom:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+    .btn-verify-custom i {
+        margin-right: 10px;
+        font-size: 18px;
+    }
+
+    .btn-verify-custom .spinner-border {
+        width: 18px;
+        height: 18px;
+        margin-right: 10px;
+    }
+
+    .resend-section {
+        background: #f8f9fc;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+
+    .resend-section p {
+        margin: 0 0 12px 0;
+        color: #6c757d;
+        font-size: 14px;
+    }
+
+    .btn-resend-custom {
+        background: white;
+        border: 2px solid #28a745;
+        padding: 12px 24px;
+        font-size: 15px;
+        font-weight: 600;
+        border-radius: 10px;
+        color: #28a745;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        display: inline-block;
+        text-decoration: none;
+    }
+
+    .btn-resend-custom:hover {
+        background: #28a745;
+        color: white;
+        transform: translateY(-1px);
+    }
+
+    .btn-resend-custom i {
+        margin-right: 8px;
+    }
+
+    .divider {
+        position: relative;
+        text-align: center;
+        margin: 25px 0;
+    }
+
+    .divider::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        width: 100%;
+        height: 1px;
+        background: #e0e0e0;
+    }
+
+    .divider span {
+        position: relative;
+        background: white;
+        padding: 0 15px;
+        color: #999;
+        font-size: 14px;
+    }
+
+    .back-to-login {
+        text-align: center;
+    }
+
+    .back-to-login a {
+        color: #28a745;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        font-size: 14px;
+    }
+
+    .back-to-login a:hover {
+        color: #20c997;
+        text-decoration: underline;
+    }
+
+    .back-to-login i {
+        margin-right: 6px;
+    }
+
+    .expiry-notice {
+        background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);
+        color: white;
+        padding: 15px 20px;
+        border-radius: 12px;
+        text-align: center;
+        margin-top: 25px;
+        font-size: 14px;
+        box-shadow: 0 4px 15px rgba(255, 193, 7, 0.3);
+    }
+
+    .expiry-notice i {
+        margin-right: 8px;
+        font-size: 16px;
+    }
+
+    .alert-custom {
+        border-radius: 12px;
+        padding: 15px 20px;
+        margin-bottom: 20px;
+        border: none;
+    }
+
+    .validation-message {
+        display: block;
+        margin-top: 8px;
+        font-size: 13px;
+    }
+
+    .form-group-spacing {
+        margin-bottom: 25px;
+    }
+</style>
+
+<div class="verify-2fa-container">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-5 col-lg-5">
+                <div class="verify-2fa-card">
+                    <div class="verify-2fa-header">
+                        <div class="shield-icon">🛡️</div>
+                        <h3>Verify Your Identity</h3>
+                        <p>Two-Factor Authentication</p>
                     </div>
+                    <div class="verify-2fa-body">
+                        @if (TempData["SuccessMessage"] != null)
+                        {
+                            <div class="alert alert-success alert-custom">
+                                <i class="bi bi-check-circle-fill"></i> @TempData["SuccessMessage"]
+                            </div>
+                        }
 
-                    <form asp-action="VerifyTwoFactor" method="post">
-                        @Html.AntiForgeryToken()
-                        <input type="hidden" asp-for="Email" />
-                        
-                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
-
-                        <!-- Verification Code -->
-                        <div class="mb-3">
-                            <label asp-for="Code" class="form-label fw-bold">Enter Verification Code</label>
-                            <input asp-for="Code" class="form-control form-control-lg text-center" 
-                                   placeholder="000000" maxlength="6" style="letter-spacing: 0.5em; font-size: 1.5rem;" autofocus />
-                            <span asp-validation-for="Code" class="text-danger small"></span>
+                        <div class="email-info-box">
+                            <i class="bi bi-envelope-check"></i>
+                            <p>We've sent a 6-digit verification code to:</p>
+                            <strong>@Model.Email</strong>
                         </div>
 
-                        <!-- Submit Button -->
-                        <div class="d-grid gap-2 mb-3">
-                            <button type="submit" class="btn btn-primary btn-lg">
+                        <form asp-action="VerifyTwoFactor" method="post" id="verify2faForm">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" asp-for="Email" />
+                            
+                            <div asp-validation-summary="ModelOnly" class="alert alert-danger alert-custom" role="alert"></div>
+
+                            <!-- Verification Code -->
+                            <div class="form-group-spacing">
+                                <label asp-for="Code" class="form-label-custom">Enter Verification Code</label>
+                                <input asp-for="Code" class="code-input-custom" 
+                                       placeholder="000000" maxlength="6" autofocus 
+                                       pattern="[0-9]{6}" inputmode="numeric" />
+                                <span asp-validation-for="Code" class="text-danger validation-message"></span>
+                            </div>
+
+                            <!-- Verify Button -->
+                            <button type="submit" class="btn-verify-custom" id="verifyBtn">
                                 <i class="bi bi-check-circle-fill"></i> Verify & Login
                             </button>
-                        </div>
 
-                        <!-- Resend Code -->
-                        <div class="text-center">
-                            <p class="small text-muted mb-2">Didn't receive the code?</p>
-                            <a asp-action="ResendTwoFactorCode" class="btn btn-outline-secondary btn-sm">
-                                <i class="bi bi-arrow-clockwise"></i> Resend Code
-                            </a>
-                        </div>
-                    </form>
+                            <!-- Resend Code -->
+                            <div class="resend-section">
+                                <p>Didn't receive the code?</p>
+                                <a asp-action="ResendTwoFactorCode" class="btn-resend-custom">
+                                    <i class="bi bi-arrow-clockwise"></i> Resend Code
+                                </a>
+                            </div>
 
-                    <hr class="my-3" />
+                            <div class="divider">
+                                <span>or</span>
+                            </div>
 
-                    <div class="text-center">
-                        <a asp-action="Login" class="text-decoration-none small">
-                            <i class="bi bi-arrow-left"></i> Back to Login
-                        </a>
+                            <div class="back-to-login">
+                                <a asp-action="Login">
+                                    <i class="bi bi-arrow-left"></i> Back to Login
+                                </a>
+                            </div>
+                        </form>
                     </div>
                 </div>
-            </div>
 
-            <div class="alert alert-info mt-3 small text-center">
-                <i class="bi bi-clock"></i> This code expires in 5 minutes
+                <div class="expiry-notice">
+                    <i class="bi bi-clock-history"></i> This code expires in 5 minutes
+                </div>
             </div>
         </div>
     </div>
@@ -77,8 +346,27 @@
     
     <script>
         // Auto-format code input (digits only)
-        document.querySelector('input[name="Code"]').addEventListener('input', function(e) {
+        const codeInput = document.querySelector('input[name="Code"]');
+        
+        codeInput.addEventListener('input', function(e) {
             this.value = this.value.replace(/\D/g, '');
+        });
+
+        // Add loading state on form submission
+        document.getElementById('verify2faForm').addEventListener('submit', function(e) {
+            const verifyBtn = document.getElementById('verifyBtn');
+            if (verifyBtn && codeInput.value.length === 6) {
+                verifyBtn.disabled = true;
+                verifyBtn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Verifying...';
+            }
+        });
+
+        // Auto-submit when 6 digits are entered
+        codeInput.addEventListener('input', function() {
+            if (this.value.length === 6) {
+                // Optional: Auto-submit after a short delay
+                // setTimeout(() => document.getElementById('verify2faForm').submit(), 500);
+            }
         });
     </script>
 }

@@ -1,0 +1,217 @@
+@model FreshFarmMarket.ViewModels.RegisterViewModel
+@{
+    ViewData["Title"] = "Register - Fresh Farm Market";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow-lg">
+                <div class="card-header bg-success text-white">
+                    <h3 class="mb-0"><i class="bi bi-person-plus-fill"></i> Create Your Account</h3>
+                    <p class="mb-0 small">Join Fresh Farm Market today!</p>
+                </div>
+                <div class="card-body p-4">
+                    <form asp-action="Register" method="post" enctype="multipart/form-data" id="registerForm">
+                        @Html.AntiForgeryToken()
+                        
+                        <div asp-validation-summary="ModelOnly" class="alert alert-danger" role="alert"></div>
+
+                        <div class="row">
+                            <!-- Full Name -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="FullName" class="form-label fw-bold"></label>
+                                <input asp-for="FullName" class="form-control" placeholder="Enter your full name" />
+                                <span asp-validation-for="FullName" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Gender -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Gender" class="form-label fw-bold"></label>
+                                <select asp-for="Gender" class="form-select">
+                                    <option value="">-- Select Gender --</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <span asp-validation-for="Gender" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Credit Card Number -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="CreditCardNo" class="form-label fw-bold"></label>
+                                <input asp-for="CreditCardNo" class="form-control" placeholder="16-digit card number" maxlength="16" />
+                                <span asp-validation-for="CreditCardNo" class="text-danger small"></span>
+                                <small class="text-muted">Will be encrypted and stored securely</small>
+                            </div>
+
+                            <!-- Mobile Number -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="MobileNo" class="form-label fw-bold"></label>
+                                <input asp-for="MobileNo" class="form-control" placeholder="8xxxxxxx or 9xxxxxxx" maxlength="8" />
+                                <span asp-validation-for="MobileNo" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <!-- Delivery Address -->
+                        <div class="mb-3">
+                            <label asp-for="DeliveryAddress" class="form-label fw-bold"></label>
+                            <textarea asp-for="DeliveryAddress" class="form-control" rows="2" placeholder="Enter your delivery address"></textarea>
+                            <span asp-validation-for="DeliveryAddress" class="text-danger small"></span>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="mb-3">
+                            <label asp-for="Email" class="form-label fw-bold"></label>
+                            <input asp-for="Email" class="form-control" placeholder="your.email@example.com" />
+                            <span asp-validation-for="Email" class="text-danger small"></span>
+                        </div>
+
+                        <div class="row">
+                            <!-- Password -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Password" class="form-label fw-bold"></label>
+                                <input asp-for="Password" class="form-control" placeholder="Min 12 characters" id="password" />
+                                <span asp-validation-for="Password" class="text-danger small"></span>
+                                
+                                <!-- Password Strength Indicator -->
+                                <div class="progress mt-2" style="height: 5px;">
+                                    <div id="passwordStrength" class="progress-bar" role="progressbar" style="width: 0%"></div>
+                                </div>
+                                <small id="passwordStrengthText" class="text-muted"></small>
+                            </div>
+
+                            <!-- Confirm Password -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="ConfirmPassword" class="form-label fw-bold"></label>
+                                <input asp-for="ConfirmPassword" class="form-control" placeholder="Re-enter password" />
+                                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <!-- Photo Upload -->
+                        <div class="mb-3">
+                            <label asp-for="Photo" class="form-label fw-bold"></label>
+                            <input asp-for="Photo" class="form-control" type="file" accept=".jpg,.jpeg" id="photoUpload" />
+                            <span asp-validation-for="Photo" class="text-danger small"></span>
+                            <small class="text-muted d-block">Only .JPG files, max 5MB</small>
+                            <img id="photoPreview" class="mt-2" style="max-width: 200px; display: none;" />
+                        </div>
+
+                        <!-- About Me -->
+                        <div class="mb-3">
+                            <label asp-for="AboutMe" class="form-label fw-bold"></label>
+                            <textarea asp-for="AboutMe" class="form-control" rows="3" placeholder="Tell us about yourself (optional)"></textarea>
+                            <span asp-validation-for="AboutMe" class="text-danger small"></span>
+                        </div>
+
+                        <!-- reCAPTCHA Hidden Field -->
+                        <input type="hidden" id="recaptchaToken" name="RecaptchaToken" />
+
+                        <!-- Password Requirements -->
+                        <div class="alert alert-info small">
+                            <strong>Password Requirements:</strong>
+                            <ul class="mb-0">
+                                <li>At least 12 characters long</li>
+                                <li>Contains uppercase letter (A-Z)</li>
+                                <li>Contains lowercase letter (a-z)</li>
+                                <li>Contains number (0-9)</li>
+                                <li>Contains special character (@@@@, $, !, %, *, ?, &amp;, etc.)</li>
+                            </ul>
+                        </div>
+
+                        <!-- Submit Button -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle-fill"></i> Create Account
+                            </button>
+                        </div>
+
+                        <div class="text-center mt-3">
+                            <p>Already have an account? <a asp-action="Login" class="text-decoration-none fw-bold">Login here</a></p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <!-- reCAPTCHA v3 Script -->
+    <script src="https://www.google.com/recaptcha/api.js?render=6Lf7xVIsAAAAADlZKBz6FFK6O3P_VNDj38q5xVNa"></script>
+    
+    <script>
+        // Prevent form submission and execute reCAPTCHA first
+        document.getElementById('registerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const form = this;
+            
+            grecaptcha.ready(function() {
+                grecaptcha.execute('6Lf7xVIsAAAAADlZKBz6FFK6O3P_VNDj38q5xVNa', {action: 'register'})
+                    .then(function(token) {
+                        document.getElementById('recaptchaToken').value = token;
+                        form.submit();
+                    });
+            });
+        });
+
+        // Password Strength Indicator
+        document.getElementById('password').addEventListener('input', function() {
+            const password = this.value;
+            const strengthBar = document.getElementById('passwordStrength');
+            const strengthText = document.getElementById('passwordStrengthText');
+            
+            let strength = 0;
+            let feedback = [];
+            
+            if (password.length >= 12) strength++;
+            if (/[a-z]/.test(password)) strength++;
+            if (/[A-Z]/.test(password)) strength++;
+            if (/[0-9]/.test(password)) strength++;
+            if (/[@@$!%*?&#^()_+=\-\[\]{}|\\:;""'<>,.~/`]/.test(password)) strength++;
+            
+            const percentage = (strength / 5) * 100;
+            strengthBar.style.width = percentage + '%';
+            
+            if (strength === 0) {
+                strengthBar.className = 'progress-bar bg-secondary';
+                strengthText.textContent = '';
+            } else if (strength <= 2) {
+                strengthBar.className = 'progress-bar bg-danger';
+                strengthText.textContent = 'Weak password';
+                strengthText.className = 'text-danger small';
+            } else if (strength === 3) {
+                strengthBar.className = 'progress-bar bg-warning';
+                strengthText.textContent = 'Moderate password';
+                strengthText.className = 'text-warning small';
+            } else if (strength === 4) {
+                strengthBar.className = 'progress-bar bg-info';
+                strengthText.textContent = 'Good password';
+                strengthText.className = 'text-info small';
+            } else {
+                strengthBar.className = 'progress-bar bg-success';
+                strengthText.textContent = 'Strong password!';
+                strengthText.className = 'text-success small';
+            }
+        });
+
+        // Photo Preview
+        document.getElementById('photoUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('photoPreview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    </script>
+}
