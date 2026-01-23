@@ -94,3 +94,4 @@ logs/
 ✗ appsettings.Development.json
 ✗ keys/ (encryption keys)
 ✗ wwwroot/uploads/ (user uploads)
+```
