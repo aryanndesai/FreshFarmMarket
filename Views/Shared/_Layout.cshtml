@@ -68,18 +68,18 @@
             </div>
         </nav>
     </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+    <div class="container d-flex flex-column flex-grow-1">
+        <main role="main" class="pb-5 d-flex flex-column flex-grow-1">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="border-top footer text-muted mt-5">
-        <div class="container text-center py-3">
+    <footer class="border-top footer text-muted" style="margin-top: auto; background-color: #f8f9fa;">
+        <div class="container text-center py-4">
             &copy; 2025 - Fresh Farm Market - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
             <br />
             <small class="text-success">
-                <i class="bi bi-shield-check"></i> Secured with 2FA, AES-256 Encryption & PBKDF2 Password Hashing
+                <i class="bi bi-shield-check"></i> Secured with 2FA, AES-256 Encryption &amp; PBKDF2 Password Hashing
             </small>
         </div>
     </footer>
