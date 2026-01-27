@@ -252,6 +252,8 @@
                             {
                                 // Delete the cookie after reading it
                                 Context.Response.Cookies.Delete("SessionTerminatedMessage");
+                                // Clear old TempData messages to prevent showing stale "Login successful!" message
+                                TempData.Clear();
                                 <div class="alert alert-warning-custom alert-dismissible fade show" role="alert">
                                     <i class="bi bi-exclamation-triangle-fill"></i> @sessionTerminatedMessage
                                     <button type="button" class="btn-close close-btn" data-bs-dismiss="alert"></button>
