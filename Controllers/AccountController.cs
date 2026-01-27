@@ -21,6 +21,8 @@ namespace FreshFarmMarket.Controllers
         private readonly PasswordService _passwordService;
         private readonly EmailService _emailService;
         private readonly IConfiguration _configuration;
+        private readonly InputSanitizationService _sanitizationService;
+        private readonly SessionManagementService _sessionService;
 
         // Account lockout settings
         private const int MAX_FAILED_ATTEMPTS = 3;
@@ -28,7 +30,7 @@ namespace FreshFarmMarket.Controllers
         private const int AUTO_UNLOCK_MINUTES = 10;
 
         // Password policy settings
-        private const int MIN_PASSWORD_AGE_MINUTES = 1; // Minimum time before can change password again
+        private const int MIN_PASSWORD_AGE_MINUTES = 5; // Minimum time before can change password again
         private const int MAX_PASSWORD_AGE_DAYS = 90; // Force password change after 90 days
         private const int PASSWORD_HISTORY_COUNT = 2; // Remember last 2 passwords
 
@@ -38,7 +40,9 @@ namespace FreshFarmMarket.Controllers
             AuditService auditService,
             PasswordService passwordService,
             EmailService emailService,
-            IConfiguration configuration
+            IConfiguration configuration,
+            InputSanitizationService sanitizationService,
+            SessionManagementService sessionService
         )
         {
             _context = context;
@@ -47,6 +51,8 @@ namespace FreshFarmMarket.Controllers
             _passwordService = passwordService;
             _emailService = emailService;
             _configuration = configuration;
+            _sanitizationService = sanitizationService;
+            _sessionService = sessionService;
         }
 
         // GET: Account/Register
@@ -145,18 +151,41 @@ namespace FreshFarmMarket.Controllers
             // Encrypt sensitive data
             var encryptedCreditCard = _encryptionService.Encrypt(model.CreditCardNo);
 
-            // Create new user
+            // Sanitize text inputs to prevent XSS attacks
+            // We check if there was dangerous content so we can log it
+            var fullNameHadDangerousContent = _sanitizationService.ContainsDangerousContent(model.FullName);
+            var aboutMeHadDangerousContent = _sanitizationService.ContainsDangerousContent(model.AboutMe);
+            var addressHadDangerousContent = _sanitizationService.ContainsDangerousContent(model.DeliveryAddress);
+
+            // Log if we detected any XSS attempts
+            if (fullNameHadDangerousContent || aboutMeHadDangerousContent || addressHadDangerousContent)
+            {
+                await _auditService.LogAsync(
+                    "XSS Attempt Detected",
+                    null,
+                    $"Potential XSS attack in registration from email: {model.Email}. " +
+                    $"FullName: {fullNameHadDangerousContent}, AboutMe: {aboutMeHadDangerousContent}, Address: {addressHadDangerousContent}",
+                    false
+                );
+            }
+
+            // Sanitize the inputs to remove any dangerous content
+            var sanitizedFullName = _sanitizationService.Sanitize(model.FullName);
+            var sanitizedAboutMe = _sanitizationService.Sanitize(model.AboutMe);
+            var sanitizedAddress = _sanitizationService.Sanitize(model.DeliveryAddress);
+
+            // Create new user with sanitized inputs
             var user = new User
             {
-                FullName = model.FullName,
+                FullName = sanitizedFullName,
                 CreditCardNo = encryptedCreditCard,
                 Gender = model.Gender,
                 MobileNo = model.MobileNo,
-                DeliveryAddress = model.DeliveryAddress,
+                DeliveryAddress = sanitizedAddress,
                 Email = model.Email.ToLower(),
                 PasswordHash = passwordHash,
                 PhotoPath = $"/uploads/{uniqueFileName}",
-                AboutMe = model.AboutMe,
+                AboutMe = sanitizedAboutMe ?? string.Empty,
                 CreatedAt = DateTime.UtcNow,
                 PasswordLastChanged = DateTime.UtcNow,
                 FailedLoginAttempts = 0,
@@ -388,10 +417,32 @@ namespace FreshFarmMarket.Controllers
             user.LastLogin = DateTime.UtcNow;
             await _context.SaveChangesAsync();
 
+            // Get the user's IP address and browser info for session tracking
+            var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "Unknown";
+            var userAgent = HttpContext.Request.Headers["User-Agent"].ToString();
+
+            // Create a new session and terminate any existing sessions
+            // This is what enforces the "one active session at a time" rule
+            var sessionToken = await _sessionService.CreateSessionAsync(user.UserId, ipAddress, userAgent);
+
             // Generate unique AuthToken to prevent session fixation
             string authToken = Guid.NewGuid().ToString();
 
-            // Store AuthToken in secure cookie
+            // Store the session token in a secure cookie
+            // This is checked by the SessionValidationMiddleware on every request
+            Response.Cookies.Append(
+                "SessionToken",
+                sessionToken,
+                new CookieOptions
+                {
+                    HttpOnly = true, // Prevents JavaScript access
+                    Secure = true, // Requires HTTPS
+                    SameSite = SameSiteMode.Strict, // CSRF protection
+                    Expires = DateTime.Now.AddHours(8), // 8-hour expiration
+                }
+            );
+
+            // Store AuthToken in secure cookie (for additional security)
             Response.Cookies.Append(
                 "AuthToken",
                 authToken,
@@ -409,12 +460,13 @@ namespace FreshFarmMarket.Controllers
             HttpContext.Session.SetString("UserEmail", user.Email);
             HttpContext.Session.SetString("UserName", user.FullName);
             HttpContext.Session.SetString("AuthToken", authToken); // Store in session too
+            HttpContext.Session.SetString("SessionToken", sessionToken); // Store session token too
 
             // Log successful login
             await _auditService.LogAsync(
                 "Login Successful",
                 user.UserId,
-                $"User logged in: {user.Email}",
+                $"User logged in: {user.Email} from IP: {ipAddress}",
                 true
             );
         }
@@ -597,12 +649,20 @@ namespace FreshFarmMarket.Controllers
             }
 
             // Check minimum password age
+            // Users can't change their password more than once every 5 minutes
             var minutesSinceLastChange = (DateTime.UtcNow - user.PasswordLastChanged).TotalMinutes;
             if (minutesSinceLastChange < MIN_PASSWORD_AGE_MINUTES && !user.RequirePasswordChange)
             {
+                var minutesRemaining = (int)Math.Ceiling(MIN_PASSWORD_AGE_MINUTES - minutesSinceLastChange);
                 ModelState.AddModelError(
                     "",
-                    $"You can only change your password once every {MIN_PASSWORD_AGE_MINUTES} minute(s)"
+                    $"Password can only be changed once every {MIN_PASSWORD_AGE_MINUTES} minutes. Please wait {minutesRemaining} more minute(s)."
+                );
+                await _auditService.LogAsync(
+                    "Password Change Failed",
+                    user.UserId,
+                    $"Password change attempted before minimum age. {minutesRemaining} minutes remaining.",
+                    false
                 );
                 return View(model);
             }
@@ -877,17 +937,25 @@ namespace FreshFarmMarket.Controllers
         public async Task<IActionResult> Logout()
         {
             var userId = HttpContext.Session.GetInt32("UserId");
+            var sessionToken = Request.Cookies["SessionToken"];
 
             if (userId.HasValue)
             {
                 await _auditService.LogAsync("Logout", userId.Value, "User logged out", true);
             }
 
+            // Terminate the session in the database
+            if (!string.IsNullOrEmpty(sessionToken))
+            {
+                await _sessionService.TerminateSessionAsync(sessionToken, "User logged out");
+            }
+
             // Clear all session data
             HttpContext.Session.Clear();
 
-            // Delete AuthToken cookie
+            // Delete auth cookies
             Response.Cookies.Delete("AuthToken");
+            Response.Cookies.Delete("SessionToken");
 
             TempData["SuccessMessage"] = "You have been logged out successfully";
             return RedirectToAction("Login");

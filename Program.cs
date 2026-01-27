@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.DataProtection;
 using FreshFarmMarket.Data;
 using FreshFarmMarket.Services;
+using FreshFarmMarket.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +14,8 @@ builder.Services.AddScoped<EncryptionService>();
 builder.Services.AddScoped<AuditService>();
 builder.Services.AddScoped<PasswordService>();
 builder.Services.AddScoped<EmailService>();
+builder.Services.AddScoped<InputSanitizationService>();
+builder.Services.AddScoped<SessionManagementService>();
 
 // Configure SQLite Database
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
@@ -74,6 +77,10 @@ app.UseRouting();
 
 // Enable Session
 app.UseSession();
+
+// Validate user sessions to detect concurrent logins
+// This must come after UseSession so we can access session data
+app.UseSessionValidation();
 
 app.UseAuthorization();
 

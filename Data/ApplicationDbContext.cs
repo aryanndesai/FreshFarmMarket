@@ -15,6 +15,7 @@ namespace FreshFarmMarket.Data
         public DbSet<PasswordHistory> PasswordHistories { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         public DbSet<TwoFactorCode> TwoFactorCodes { get; set; }
+        public DbSet<UserSession> UserSessions { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -65,6 +66,28 @@ namespace FreshFarmMarket.Data
             modelBuilder.Entity<TwoFactorCode>()
                 .Property(t => t.CreatedAt)
                 .HasDefaultValueSql("datetime('now')");
+
+            // UserSession configuration for concurrent session tracking
+            modelBuilder.Entity<UserSession>()
+                .Property(s => s.CreatedAt)
+                .HasDefaultValueSql("datetime('now')");
+
+            modelBuilder.Entity<UserSession>()
+                .Property(s => s.LastActivityAt)
+                .HasDefaultValueSql("datetime('now')");
+
+            modelBuilder.Entity<UserSession>()
+                .Property(s => s.IsActive)
+                .HasDefaultValue(true);
+
+            // Add an index on SessionToken for faster lookups during validation
+            modelBuilder.Entity<UserSession>()
+                .HasIndex(s => s.SessionToken)
+                .IsUnique();
+
+            // Add an index on UserId and IsActive for finding active sessions
+            modelBuilder.Entity<UserSession>()
+                .HasIndex(s => new { s.UserId, s.IsActive });
         }
     }
 } 

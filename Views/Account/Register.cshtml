@@ -337,8 +337,11 @@
 
                                 <div class="form-group-spacing">
                                     <label asp-for="MobileNo" class="form-label-custom">Mobile Number</label>
-                                    <input asp-for="MobileNo" class="form-control-custom" placeholder="8xxxxxxx or 9xxxxxxx" maxlength="8" />
+                                    <input asp-for="MobileNo" class="form-control-custom" placeholder="8xxxxxxx or 9xxxxxxx" maxlength="8" 
+                                           id="mobileNo" inputmode="numeric" pattern="[0-9]*" />
                                     <span asp-validation-for="MobileNo" class="text-danger validation-message"></span>
+                                    <span id="mobileValidation" class="text-danger validation-message" style="display: none;"></span>
+                                    <small class="helper-text">Singapore format: 8 digits starting with 8 or 9</small>
                                 </div>
 
                                 <div class="form-group-spacing">
@@ -356,9 +359,11 @@
                                 
                                 <div class="form-group-spacing">
                                     <label asp-for="CreditCardNo" class="form-label-custom">Credit Card Number</label>
-                                    <input asp-for="CreditCardNo" class="form-control-custom" placeholder="16-digit card number" maxlength="16" />
+                                    <input asp-for="CreditCardNo" class="form-control-custom" placeholder="16-digit card number" maxlength="16" 
+                                           id="creditCard" inputmode="numeric" pattern="[0-9]*" />
                                     <span asp-validation-for="CreditCardNo" class="text-danger validation-message"></span>
-                                    <small class="helper-text">🔒 Will be encrypted and stored securely</small>
+                                    <span id="creditCardValidation" class="text-danger validation-message" style="display: none;"></span>
+                                    <small class="helper-text">🔒 Will be encrypted and stored securely (16 digits only)</small>
                                 </div>
                             </div>
 
@@ -501,23 +506,125 @@
                 reader.readAsDataURL(file);
             }
         });
-    </script>
-}
-            }
-        });
 
-        // Photo Preview
-        document.getElementById('photoUpload').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('photoPreview');
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                }
-                reader.readAsDataURL(file);
+        // Mobile Number Validation
+        // This blocks any non-digit characters from being typed
+        const mobileInput = document.getElementById('mobileNo');
+        const mobileValidation = document.getElementById('mobileValidation');
+        
+        // Block non-numeric input as you type
+        mobileInput.addEventListener('keypress', function(e) {
+            // Allow only digits 0-9
+            if (!/[0-9]/.test(e.key)) {
+                e.preventDefault();
             }
         });
+        
+        // Handle paste events to filter out non-numeric characters
+        mobileInput.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+            // Keep only digits from pasted content
+            const digitsOnly = pastedText.replace(/[^0-9]/g, '');
+            // Limit to 8 characters
+            const truncated = digitsOnly.substring(0, 8);
+            // Insert at cursor position
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            const currentValue = this.value;
+            const newValue = currentValue.substring(0, start) + truncated + currentValue.substring(end);
+            this.value = newValue.substring(0, 8);
+            // Trigger validation
+            validateMobileNumber();
+        });
+        
+        // Validate mobile number format on input
+        mobileInput.addEventListener('input', validateMobileNumber);
+        
+        function validateMobileNumber() {
+            const value = mobileInput.value;
+            
+            if (value.length === 0) {
+                mobileValidation.style.display = 'none';
+                mobileInput.style.borderColor = '#e3e6f0';
+                return;
+            }
+            
+            // Check if it starts with 8 or 9 (Singapore format)
+            if (value.length >= 1 && !/^[89]/.test(value)) {
+                mobileValidation.textContent = 'Must start with 8 or 9';
+                mobileValidation.style.display = 'block';
+                mobileInput.style.borderColor = '#dc3545';
+                return;
+            }
+            
+            // Check length
+            if (value.length < 8) {
+                mobileValidation.textContent = 'Must be 8 digits';
+                mobileValidation.style.display = 'block';
+                mobileInput.style.borderColor = '#ffc107';
+                return;
+            }
+            
+            // Valid
+            mobileValidation.style.display = 'none';
+            mobileInput.style.borderColor = '#28a745';
+        }
+
+        // Credit Card Validation
+        // This blocks any non-digit characters from being typed
+        const creditCardInput = document.getElementById('creditCard');
+        const creditCardValidation = document.getElementById('creditCardValidation');
+        
+        // Block non-numeric input as you type
+        creditCardInput.addEventListener('keypress', function(e) {
+            // Allow only digits 0-9
+            if (!/[0-9]/.test(e.key)) {
+                e.preventDefault();
+            }
+        });
+        
+        // Handle paste events to filter out non-numeric characters
+        creditCardInput.addEventListener('paste', function(e) {
+            e.preventDefault();
+            const pastedText = (e.clipboardData || window.clipboardData).getData('text');
+            // Keep only digits from pasted content
+            const digitsOnly = pastedText.replace(/[^0-9]/g, '');
+            // Limit to 16 characters
+            const truncated = digitsOnly.substring(0, 16);
+            // Insert at cursor position
+            const start = this.selectionStart;
+            const end = this.selectionEnd;
+            const currentValue = this.value;
+            const newValue = currentValue.substring(0, start) + truncated + currentValue.substring(end);
+            this.value = newValue.substring(0, 16);
+            // Trigger validation
+            validateCreditCard();
+        });
+        
+        // Validate credit card on input
+        creditCardInput.addEventListener('input', validateCreditCard);
+        
+        function validateCreditCard() {
+            const value = creditCardInput.value;
+            
+            if (value.length === 0) {
+                creditCardValidation.style.display = 'none';
+                creditCardInput.style.borderColor = '#e3e6f0';
+                return;
+            }
+            
+            // Check length
+            if (value.length < 16) {
+                creditCardValidation.textContent = 'Must be exactly 16 digits (' + value.length + '/16)';
+                creditCardValidation.style.display = 'block';
+                creditCardInput.style.borderColor = '#ffc107';
+                return;
+            }
+            
+            // Valid length
+            creditCardValidation.style.display = 'none';
+            creditCardInput.style.borderColor = '#28a745';
+        }
     </script>
 }

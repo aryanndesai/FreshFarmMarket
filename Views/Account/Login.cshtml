@@ -245,6 +245,20 @@
                     </div>
                     
                     <div class="card-body login-body">
+                        @{
+                            // Check for session terminated message from the middleware
+                            var sessionTerminatedMessage = Context.Request.Cookies["SessionTerminatedMessage"];
+                            if (!string.IsNullOrEmpty(sessionTerminatedMessage))
+                            {
+                                // Delete the cookie after reading it
+                                Context.Response.Cookies.Delete("SessionTerminatedMessage");
+                                <div class="alert alert-warning-custom alert-dismissible fade show" role="alert">
+                                    <i class="bi bi-exclamation-triangle-fill"></i> @sessionTerminatedMessage
+                                    <button type="button" class="btn-close close-btn" data-bs-dismiss="alert"></button>
+                                </div>
+                            }
+                        }
+
                         @if (TempData["SuccessMessage"] != null)
                         {
                             <div class="alert alert-success-custom alert-dismissible fade show" role="alert">
